@@ -17,11 +17,10 @@ Grader password: grader
 ## Github Auto-Deploy setup:
 1. First, I set up a bare git repository(bare because it's apparently convention and probably so that if site scales and there are many files there aren't as many being pushed) of the site on the droplet server
 2. Then, I wrote a post-receive hook at the git repository and tested it.
-   `
-   #!/bin/sh
-    # Auto-deploy for CSE135
-    # Deploys shash.digital, collector, reporting
-    # Uses temp checkout + rsync only
+   `#!/bin/sh
+    #Auto-deploy for CSE135
+    #Deploys shash.digital, collector, reporting
+    #Uses temp checkout + rsync only
 
     rm -rf "/var/repo/temprepo"
 
@@ -29,8 +28,8 @@ Grader password: grader
 
     git --work-tree="/var/repo/temprepo" --git-dir="/var/repo/cse135site.git" checkout -f
 
-    rsync -a --exclude-from="/var/repo/temprepo/ignorefiles.txt" "/var/repo/temprepo/" "/var/www"
-    `
+    rsync -a --exclude-from="/var/repo/temprepo/ignorefiles.txt" "/var/repo/temprepo/" "/var/www"`
+    
 3. After testing the hook and making sure it works by directly pushing to the server from my local machine, I started working on the github action.
 4. I generated an ssh key and uploaded that along with some other information like the server IP address and server user to github secrets
 5. Then, I wrote the github action. I use an action called ssh-agent which generates an ssh connection and I made the known_hosts file and finally set up the git remote at the server and pushed. 
