@@ -4,14 +4,14 @@
 Shashwat Dudeja
 
 ## Droplet credentials:
-Grader username: grader
+**Grader username**: grader
 
-Grader password: grader
+**Grader password**: grader
 
 ## Site credentials: 
-==Grader login==: grader
+**Grader login**: grader
 
-==Grader password==: grader
+**Grader password**: grader
 
 ## Link to site: 
 [Site](https://shash.digital)
