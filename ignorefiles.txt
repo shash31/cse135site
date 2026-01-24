@@ -1,0 +1,4 @@
+ignorefiles.txt
+README.md
+hwimages/
+.github/
