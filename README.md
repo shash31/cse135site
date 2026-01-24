@@ -5,10 +5,12 @@ Shashwat Dudeja
 
 ## Droplet credentials:
 Grader username: grader
+
 Grader password: grader
 
 ## Site credentials: 
 Grader login: grader
+
 Grader password: grader
 
 ## Link to site: 
@@ -23,7 +25,7 @@ Grader password: grader
     #Auto-deploy for CSE135
 
     #Deploys shash.digital, collector, reporting
-    
+
     #Uses temp checkout + rsync only
 
     rm -rf "/var/repo/temprepo"
