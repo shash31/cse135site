@@ -34,6 +34,7 @@ h3 {
 ul {
     list-style-type: circle;
     margin-left: 2rem;
+    line-height: 1.3rem;
 }
 
 section {
@@ -42,8 +43,26 @@ section {
     background-color: lightblue;
 }
 
+p {
+    margin: 1rem;
+    font-size: 1.4rem;
+    text-align: center;
+}
+
+a {
+    margin: 1rem;
+    color: darkblue;
+    text-align: center;
+}
+
 details {
     margin: 2rem 1rem 2rem 1rem;
     padding: 1rem 1rem 1rem 1rem;
     background-color: beige;
+}
+
+summary {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
 }
