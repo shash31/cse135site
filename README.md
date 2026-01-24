@@ -1,9 +1,9 @@
-### CSE 135 HW 1
+# CSE 135 HW 1
 
 ## Team members:
 Shashwat Dudeja
 
-## Droplet credentials
+## Droplet credentials:
 Grader username: grader
 Grader password: grader
 
