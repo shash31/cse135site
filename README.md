@@ -12,7 +12,7 @@ Grader login: grader
 Grader password: grader
 
 ## Link to site: 
-[Link to site](https://shash.digital)
+[Site](https://shash.digital)
 
 ## Github Auto-Deploy setup:
 
