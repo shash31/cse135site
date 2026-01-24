@@ -1,4 +1,4 @@
 ignorefiles.txt
 README.md
-hwimages/
+hwsubmissions/
 .github/
