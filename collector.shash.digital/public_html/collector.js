@@ -55,7 +55,7 @@
         const img = new Image();
         img.onload = () => getStaticData(true)
         img.onerror = () => getStaticData(false)
-        img.src = './assets/test.png'
+        img.src = 'assets/test.png'
     }
 
     function getStaticData(imagestest) {
