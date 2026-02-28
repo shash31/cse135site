@@ -4,15 +4,15 @@ const cors = require("cors");
 
 const app = express();
 
-// --- CORS setup ---
-app.use(cors({
-    origin: 'https://test.shash.digital',
-    methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-    allowedHeaders: ['Content-Type']
-}));
+const corsOptions = {
+  origin: 'https://test.shash.digital',
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// --- MySQL connection ---
 const db = mysql.createConnection({
   host: "127.0.0.1",
   user: "analytics_user",
@@ -116,7 +116,7 @@ router.delete('/:id', (req, res) => {
 });
 
 app.use('/api/static', router);
-app.options('/api/static', cors());
+app.options('/api/static', cors(corsOptions));
 
 app.listen(3001, () => {
   console.log("REST API listening on port 3001");
