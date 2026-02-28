@@ -77,12 +77,10 @@
     window.addEventListener('load', () => {
         // Small delay to ensure loadEventEnd is populated
         setTimeout(() => {
-            const staticdata = getStaticData();
-            const timing = getPerformanceData();
             const payload = {
                 sessionID: getSessionID(),
-                staticData: static,
-                performanceData: performance
+                staticData: getStaticData(),
+                performanceData: getPerformanceData()
             }
             send(payload)
         }, 0);
@@ -90,12 +88,11 @@
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-            const activity = getActivityData();
             const payload = {
                 sessionID: getSessionID(),
-                userActivity: activity
+                userActivity: getActivityData()
             }
-            send(activity)
+            send(payload)
         }
     });
 
