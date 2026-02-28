@@ -14,7 +14,7 @@ Shashwat Dudeja
 **Grader password**: grader
 
 ## Link to site: 
-[Site](https://shash.digital)
+[Site](https://test.shash.digital)
 
 ## IP Address of Server:
 167.172.119.81
