@@ -161,16 +161,19 @@
         const data = JSON.stringify(payload)
 
         if (navigator.sendBeacon) {
+            const blob = new Blob([data], { type:'application/json '});
             navigator.sendBeacon(ENDPOINT, data);
             console.log(`Beacon sent (${payload.type})`);
         } else {
-        fetch(ENDPOINT, {
-            method: 'POST',
-            headers: { "Content-Type": "application/json" },
-            body: data,
-        }).catch((err) => {
-            console.warn('fetch fallback error:', err.message);
-        });
+            fetch(ENDPOINT, {
+                method: 'POST',
+                headers: { "Content-Type": "application/json" },
+                mode: 'cors',
+                body: data,
+                keepalive: true
+            }).catch((err) => {
+                console.warn('fetch fallback error:', err.message);
+            });
         }
 
         console.log('Payload:', payload);
