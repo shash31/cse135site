@@ -11,7 +11,6 @@ app.use(cors({
     methods: ['GET','POST','PUT','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type']
 }));
-
 app.use(express.json());
 
 // --- MySQL connection ---
@@ -53,24 +52,39 @@ router.get('/:id', (req, res) => {
 
 // POST new entry
 router.post('/', (req, res) => {
-  const data = JSON.stringify(req.body);
-  db.query("INSERT INTO logs (data) VALUES (?)", [data], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ id: results.insertId, data: req.body });
-  });
+  const payload = req.body;
+  const sessionID = payload.sessionID || null;  // Extract sessionID if present
+  const data = JSON.stringify(payload);
+
+  db.query(
+    "INSERT INTO logs (sessionID, data) VALUES (?, ?)",
+    [sessionID, data],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: results.insertId, sessionID, data: payload });
+    }
+  );
 });
 
 // PUT update entry by ID
 router.put('/:id', (req, res) => {
   const id = req.params.id;
-  const data = JSON.stringify(req.body);
-  db.query("UPDATE logs SET data = ? WHERE id = ?", [data, id], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (results.affectedRows === 0) return res.sendStatus(404);
-    res.json({ id, data: req.body });
-  });
+  const payload = req.body;
+  const sessionID = payload.sessionID || null;
+  const data = JSON.stringify(payload);
+
+  db.query(
+    "UPDATE logs SET sessionID = ?, data = ? WHERE id = ?",
+    [sessionID, data, id],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (results.affectedRows === 0) return res.sendStatus(404);
+      res.json({ id, sessionID, data: payload });
+    }
+  );
 });
 
+// DELETE entry by ID
 router.delete('/:id', (req, res) => {
   const id = req.params.id;
   db.query("DELETE FROM logs WHERE id = ?", [id], (err, results) => {
@@ -80,8 +94,10 @@ router.delete('/:id', (req, res) => {
   });
 });
 
+// Mount router under /api/static
 app.use('/api/static', router);
 
+// Handle preflight for /api/static
 app.options('/api/static', cors());
 
 // Start server
