@@ -76,21 +76,21 @@
     }
 
     document.addEventListener('mousemove', (event) => {
-        mouseActivity[cursorPos].push([event.clientX, event.clientY]);
-        if (event.button) mouseActivity[clicks].push(event.button);
+        mouseActivity.cursorPos.push([event.clientX, event.clientY]);
+        if (event.button) mouseActivity.clicks.push(event.button);
 
     });
 
     window.addEventListener('scroll', () => {
-        mouseActivity[scrolling].push([window.scrollX, window.scrollY])
+        mouseActivity.scrolling.push([window.scrollX, window.scrollY])
     });
 
     document.addEventListener('keydown', (event) => {
-        keyboardActivity[keydownEvents].push(event.key)
+        keyboardActivity.keydownEvents.push(event.key)
     });
 
-    document.addEventListener('keyup', () => {
-        keyboardActivity[keyupEvents].push(event.key)
+    document.addEventListener('keyup', (event) => {
+        keyboardActivity.keyupEvents.push(event.key)
     })
 
     function send(payload) {
