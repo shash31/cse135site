@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    const ENDPOINT = 'https://collector.shash.digital/log'
+    const ENDPOINT = 'http://collector.shash.digital/log'
 
     let IDLE_THRESHOLD = 2000; // 2 seconds
     let idle_timeout;
