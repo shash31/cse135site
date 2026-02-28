@@ -160,15 +160,27 @@
     function send(method, payload) {
         const data = JSON.stringify(payload)
 
-        fetch(ENDPOINT, {
-            method: method,
-            headers: { "Content-Type": "application/json" },
-            mode: 'cors',
-            body: data,
-            keepalive: true
-        }).catch((err) => {
-            console.warn('fetch fallback error:', err.message);
-        });
+        if (method == 'POST') {
+            fetch(ENDPOINT, {
+                method: 'POST',
+                headers: { "Content-Type": "application/json" },
+                mode: 'cors',
+                body: data,
+                keepalive: true
+            }).catch((err) => {
+                console.warn('fetch fallback error:', err.message);
+            });
+        } else {
+            fetch(ENDPOINT+`/${payload.sessionID}`, {
+                method: 'PUT',
+                headers: { "Content-Type": "application/json" },
+                mode: 'cors',
+                body: data,
+                keepalive: true
+            }).catch((err) => {
+                console.warn('fetch fallback error:', err.message);
+            });
+        }
 
         console.log('Payload:', payload);
     }
