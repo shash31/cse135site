@@ -5,20 +5,10 @@ const cors = require("cors");
 const app = express();
 
 app.use(cors({
-    // origin: 'https://test.shash.digital',
-    origin: '*', 
+    origin: 'https://test.shash.digital',
     methods: ['POST', 'GET', 'OPTIONS'],
     allowedHeaders: ['Content-Type']
 }));
-// app.use((req, res, next) => {
-//   res.header('Access-Control-Allow-Origin', '*');
-//   res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-//   res.header('Access-Control-Allow-Headers', 'Content-Type');
-//   if (req.method === 'OPTIONS') {
-//     return res.sendStatus(204);
-//   }
-//   next();
-// });
 
 app.use(express.json());
 
@@ -37,7 +27,7 @@ db.connect(err => {
   console.log('Connected to DB');
 });
 
-app.options('/log', cors({ origin: '*' }));  // allow preflight
+app.options('/log', cors({ origin: 'https://test.shash.digital/' }));  // allow preflight
 
 app.post("/log", (req, res) => {
   const data = JSON.stringify(req.body);
