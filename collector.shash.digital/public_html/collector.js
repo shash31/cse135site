@@ -1,6 +1,8 @@
 (function () {
     'use strict';
 
+    const ENDPOINT = 'https://collector.shash.digital/log'
+
     let IDLE_THRESHOLD = 2000; // 2 seconds
     let idle_timeout;
     let idleStartTime = null;
@@ -156,20 +158,20 @@
     })
 
     function send(payload) {
-        // const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        const data = JSON.stringify(payload)
 
-        // if (navigator.sendBeacon) {
-        // navigator.sendBeacon(ENDPOINT, blob);
-        // console.log(`Beacon sent (${payload.type})`);
-        // } else {
-        // fetch(ENDPOINT, {
-        //     method: 'POST',
-        //     body: blob,
-        //     keepalive: true
-        // }).catch((err) => {
-        //     console.warn('fetch fallback error:', err.message);
-        // });
-        // }
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(ENDPOINT, data);
+            console.log(`Beacon sent (${payload.type})`);
+        } else {
+        fetch(ENDPOINT, {
+            method: 'POST',
+            headers: { "Content-Type": "application/json" },
+            body: data,
+        }).catch((err) => {
+            console.warn('fetch fallback error:', err.message);
+        });
+        }
 
         console.log('Payload:', payload);
     }
