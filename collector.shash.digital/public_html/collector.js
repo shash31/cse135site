@@ -51,10 +51,28 @@
         return sid;
     }
 
-    function imgTestToStaticData() {
+    function imgTestBeforeSend() {
         const img = new Image();
-        img.onload = () => getStaticData(true)
-        img.onerror = () => getStaticData(false)
+
+        img.onload = () => {
+            const payload = {
+                sessionID: getSessionID(),
+                staticData: getStaticData(true),
+                performanceData: getPerformanceData()
+            }
+
+            send(payload)
+        }
+        img.onerror = () => {
+            const payload = {
+                sessionID: getSessionID(),
+                staticData: getStaticData(false),
+                performanceData: getPerformanceData()
+            }
+
+            send(payload)
+        }
+
         img.src = 'assets/test.png'
     }
 
@@ -158,20 +176,20 @@
 
     function reportError(errorData) {
         if (errorCount >= 10) {
-            console.log(`[collector-v6] Error rate limit reached (10), ignoring:`, errorData.message);
+            console.log(`Error rate limit reached (10), ignoring:`, errorData.message);
             return;
         }
 
         // Deduplicate by type + message + source + line
         const key = `${errorData.type}:${errorData.message || ''}:${errorData.source || ''}:${errorData.line || ''}`;
         if (reportedErrors.has(key)) {
-            console.log('[collector-v6] Duplicate error suppressed:', errorData.message);
+            console.log('Duplicate error suppressed:', errorData.message);
             return;
         }
         reportedErrors.add(key);
         errorCount++;
 
-        console.log(`[collector-v6] Error #${errorCount}:`, errorData.type, '-', errorData.message);
+        console.log(`Error #${errorCount}:`, errorData.type, '-', errorData.message);
 
         // Send error beacon
         const payload = {
@@ -216,14 +234,14 @@
         setTimeout(() => {
             user_entry_time = performance.now()
             setIdleTimeOut();
-            // Image onload/onerror that calls static data collection
-            const sdata = imgTestToStaticData()
-            const payload = {
-                sessionID: getSessionID(),
-                staticData: sdata,
-                performanceData: getPerformanceData()
-            }
-            send(payload)
+            // Image onload/onerror that sends payload
+            imgTestBeforeSend();
+            // const payload = {
+            //     sessionID: getSessionID(),
+            //     staticData: sdata,
+            //     performanceData: getPerformanceData()
+            // }
+            // send(payload)
         }, 0);
     });
 
