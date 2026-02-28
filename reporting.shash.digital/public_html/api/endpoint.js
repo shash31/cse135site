@@ -127,7 +127,6 @@ router.delete('/:id', (req, res) => {
 });
 
 app.use('/api/static', router);
-app.options('*', cors(corsOptions));
 
 app.listen(3001, () => {
   console.log("REST API listening on port 3001");
