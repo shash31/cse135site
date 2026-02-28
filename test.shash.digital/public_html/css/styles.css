@@ -232,3 +232,7 @@ li + li {
         text-shadow: none !important;
     }
 }
+
+.css-test {
+    display: none;
+}
