@@ -41,7 +41,7 @@
         return {
             startLoad: n.fetchStart,
             endLoad: n.loadEventEnd,
-            totalLoadTime: round(n.loadEventEnd - n.fetchStart)
+            totalLoadTime: Math.round(n.loadEventEnd - n.fetchStart)
         }
 
     }
