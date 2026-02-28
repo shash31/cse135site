@@ -28,7 +28,7 @@ const db = mysql.createConnection({
   database: "analytics"
 });
 
-connection.connect(err => {
+db.connect(err => {
   if (err) {
     console.error('DB connection failed:', err);
     return;
