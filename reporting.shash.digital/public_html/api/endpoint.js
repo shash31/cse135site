@@ -13,6 +13,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+app.set('trust proxy', 1);
+
 // app.use((req, res, next) => {
 //   res.header('Access-Control-Allow-Origin', '*');
 //   res.header('Access-Control-Allow-Methods', 'POST, OPTIONS, PUT');
