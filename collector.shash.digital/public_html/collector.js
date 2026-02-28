@@ -63,7 +63,7 @@
                 performanceData: getPerformanceData()
             }
 
-            send(payload)
+            send('POST', payload)
         }
         img.onerror = () => {
             const payload = {
@@ -72,7 +72,7 @@
                 performanceData: getPerformanceData()
             }
 
-            send(payload)
+            send('POST', payload)
         }
 
         img.src = 'assets/test.png'
@@ -157,11 +157,11 @@
         keyboardActivity.keyupEvents.push(event.key)
     })
 
-    function send(payload) {
+    function send(method, payload) {
         const data = JSON.stringify(payload)
 
         fetch(ENDPOINT, {
-            method: 'POST',
+            method: method,
             headers: { "Content-Type": "application/json" },
             mode: 'cors',
             body: data,
@@ -250,7 +250,7 @@
                 sessionID: getSessionID(),
                 activity: getActivityData()
             }
-            send(payload)
+            send('PUT', payload)
         }
     });
 
