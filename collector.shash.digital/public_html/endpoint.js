@@ -37,6 +37,8 @@ db.connect(err => {
   console.log('Connected to DB');
 });
 
+app.options('/log', cors({ origin: '*' }));  // allow preflight
+
 app.post("/log", (req, res) => {
   const data = JSON.stringify(req.body);
 
