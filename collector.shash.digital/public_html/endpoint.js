@@ -5,7 +5,8 @@ const cors = require("cors");
 const app = express();
 
 app.use(cors({
-    origin: 'https://test.shash.digital', 
+    // origin: 'https://test.shash.digital',
+    origin: '*', 
     methods: ['POST'],
     allowedHeaders: ['Content-Type']
 }));
