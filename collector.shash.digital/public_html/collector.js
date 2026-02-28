@@ -51,18 +51,19 @@
         return sid;
     }
 
-    function getStaticData() {
+    function imgTestToStaticData() {
+        const img = new Image();
+        img.onload = () => getStaticData(true)
+        img.onerror = () => getStaticData(false)
+        img.src = './assets/test.png'
+    }
+
+    function getStaticData(imagestest) {
         let conntype = ''
         if ('connection' in navigator) {
             const conn = navigator.connection;
             conntype = conn.effectiveType;
         }
-
-        let imagestest;
-        const img = new Image();
-        img.onload = () => imagestest = true;
-        img.onerror = () => imagestest = false;
-        img.src = './assets/test.png'
 
         const el = document.createElement('div')
         el.className = 'css-test'
@@ -215,9 +216,11 @@
         setTimeout(() => {
             user_entry_time = performance.now()
             setIdleTimeOut();
+            // Image onload/onerror that calls static data collection
+            const sdata = imgTestToStaticData()
             const payload = {
                 sessionID: getSessionID(),
-                staticData: getStaticData(),
+                staticData: sdata,
                 performanceData: getPerformanceData()
             }
             send(payload)
