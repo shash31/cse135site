@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    const ENDPOINT = 'https://reporting.shash.digital/log'
+    const ENDPOINT = 'https://reporting.shash.digital/api/static'
 
     let IDLE_THRESHOLD = 2000; // 2 seconds
     let idle_timeout;
