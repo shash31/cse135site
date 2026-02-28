@@ -1,6 +1,11 @@
 (function () {
     'use strict';
 
+    let IDLE_THRESHOLD = 2000; // 2 seconds
+    let idle_timeout;
+    let idleStartTime = null;
+    const idle_times = []
+
     const reportedErrors = new Set();
     let errorCount = 0;
 
@@ -13,6 +18,28 @@
     const keyboardActivity = {
         keydownEvents: [],
         keyupEvents: []
+    }
+
+    let user_entry_time;
+
+    function setIdleTimeOut() {
+        if (idleStartTime) {
+            const idle_duration = Date.now() - idleStartTime
+            idle_times.push({
+                startTime: idleStartTime,
+                endTime: Date.now(),
+                duration: idle_duration
+            })
+
+            idleStartTime = null;
+        }
+
+        clearTimeout(idle_timeout);
+        idle_timeout = setTimeout(isIdle, IDLE_THRESHOLD)
+    }
+
+    function isIdle() {
+        idleStartTime = Date.now()
     }
 
     function getSessionID() {
@@ -31,11 +58,26 @@
             conntype = conn.effectiveType;
         }
 
+        let imagestest;
+        const img = new Image();
+        img.onload = () => imagestest = true;
+        img.onerror = () => imagestest = false;
+        img.src = './assets/test.png'
+
+        const el = document.createElement('div')
+        el.className = 'css-test'
+        document.body.appendChild(el)
+        const style = getComputedStyle(el)
+        let csstest = style.display === 'none';
+
         return {
             userAgent: navigator.userAgent,
             language: navigator.language,
             cookiesEnabled: navigator.cookieEnabled,
-            // TODO: JS, Images & CSS allowed
+
+            javascriptEnabled: true,
+            imagesAllowed: imagestest,
+            cssAllowed: csstest,
 
             // Viewport
             windowWidth: window.innerWidth,
@@ -43,6 +85,8 @@
             // Screen
             screenWidth: window.screen.width,
             screenHeight: window.screen.height,
+
+            networkConType: conntype
         }
     }
 
@@ -61,35 +105,34 @@
     }
 
     function getActivityData() {
-        // Idle time
-
-        // When user entered page
-
-        // When user left page
-
-        // Which page user's on
-
         return {
             mouseActivity: mouseActivity,
-            keyboardActivity: keyboardActivity
+            keyboardActivity: keyboardActivity,
+            idleTimes: idle_times,
+            userEntry: user_entry_time,
+            userExit: performance.now(),
+            page: window.location.pathname
         }
     }
 
     document.addEventListener('mousemove', (event) => {
+        setIdleTimeOut();
         mouseActivity.cursorPos.push([event.clientX, event.clientY]);
         if (event.button) mouseActivity.clicks.push(event.button);
-
     });
 
     window.addEventListener('scroll', () => {
-        mouseActivity.scrolling.push([window.scrollX, window.scrollY])
+        setIdleTimeOut();
+        mouseActivity.scrolling.push([window.scrollX, window.scrollY]);
     });
 
     document.addEventListener('keydown', (event) => {
+        setIdleTimeOut();
         keyboardActivity.keydownEvents.push(event.key)
     });
 
     document.addEventListener('keyup', (event) => {
+        setIdleTimeOut();
         keyboardActivity.keyupEvents.push(event.key)
     })
 
@@ -170,6 +213,8 @@
     window.addEventListener('load', () => {
         // Small delay to ensure loadEventEnd is populated
         setTimeout(() => {
+            user_entry_time = performance.now()
+            setIdleTimeOut();
             const payload = {
                 sessionID: getSessionID(),
                 staticData: getStaticData(),
@@ -183,7 +228,7 @@
         if (document.visibilityState === 'hidden') {
             const payload = {
                 sessionID: getSessionID(),
-                userActivity: getActivityData()
+                activity: getActivityData()
             }
             send(payload)
         }
