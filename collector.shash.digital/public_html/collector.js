@@ -159,12 +159,15 @@
 
     function send(payload) {
         const data = JSON.stringify(payload)
+        let sent;
 
         if (navigator.sendBeacon) {
             const blob = new Blob([data], { type:'application/json '});
-            navigator.sendBeacon(ENDPOINT, data);
+            sent = navigator.sendBeacon(ENDPOINT, data);
             console.log(`Beacon sent (${payload.type})`);
-        } else {
+        }
+
+        if (!sent) {
             fetch(ENDPOINT, {
                 method: 'POST',
                 headers: { "Content-Type": "application/json" },
