@@ -22,10 +22,18 @@ app.use(cors({
 app.use(express.json());
 
 const db = mysql.createConnection({
-  host: "localhost",
+  host: "127.0.0.1",
   user: "analytics_user",
   password: "password123",
   database: "analytics"
+});
+
+connection.connect(err => {
+  if (err) {
+    console.error('DB connection failed:', err);
+    return;
+  }
+  console.log('Connected to DB');
 });
 
 app.post("/log", (req, res) => {
