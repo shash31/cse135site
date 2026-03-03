@@ -13,20 +13,30 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-const db = mysql.createConnection({
+// const db = mysql.createConnection({
+//   host: "127.0.0.1",
+//   user: "analytics_user",
+//   password: "password123",
+//   database: "analytics"
+// });
+
+const db = mysql.createPool({
   host: "127.0.0.1",
   user: "analytics_user",
   password: "password123",
-  database: "analytics"
-});
+  database: "analytics",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+})
 
-db.connect(err => {
-  if (err) {
-    console.error('DB connection failed:', err);
-    process.exit(1);
-  }
-  console.log('Connected to DB');
-});
+// db.connect(err => {
+//   if (err) {
+//     console.error('DB connection failed:', err);
+//     process.exit(1);
+//   }
+//   console.log('Connected to DB');
+// });
 
 // --- REST routes for /api/static ---
 const router = express.Router();
@@ -87,7 +97,9 @@ router.put('/:id', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!results.length) return res.sendStatus(404);
 
-    const existingData = results[0].data;
+    const existingData = typeof results[0].data === 'string' 
+      ? JSON.parse(results[0].data) 
+      : results[0].data;
 
     // Merge activity payload into existing session row
     const mergedData = { ...existingData, activity: newPayload.activity };
