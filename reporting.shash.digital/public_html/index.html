@@ -35,9 +35,14 @@
       document.write(`Live @ ${new Date()}`);
 
 
-      const data = fetch('./api/static').then(res => res.json())
-
-      console.log(data)
+      let analytics;
+      
+      fetch('./api/static')
+      .then(res => res.json())
+      .then(data => {
+        analytics = data
+        console.log(analytics)
+      })
     </script>
     <main>
       <zing-grid 
