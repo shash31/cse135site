@@ -14,6 +14,11 @@
         margin: 0;
         box-sizing: border-box;
       }
+      
+      h1, h2 {
+        padding: 1em;
+      }
+
       main{
         display: flex;
         flex-direction: column;
@@ -28,6 +33,11 @@
     <h2>reporting.shash.digital</h2>
     <script>
       document.write(`Live @ ${new Date()}`);
+
+
+      const data = fetch('./api/static').then(res => res.json())
+
+      console.log(data)
     </script>
     <main>
       <zing-grid 
@@ -48,9 +58,6 @@
       <div id="idleTimeChart"></div>
 
       <script>
-        // import {zingchart, ZC} from 'zingchart/es6'; // to import the pareto chart module
-        // import 'zingchart/modules-es6/zingchart-pareto.min.js';
-
         const loadTimes = [48, 52, 45, 60]; // performanceData.totalLoadTime
         const sessionLabels = ["Session A", "Session B", "Session C", "Session D"];
 
