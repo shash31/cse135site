@@ -13,13 +13,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// const db = mysql.createConnection({
-//   host: "127.0.0.1",
-//   user: "analytics_user",
-//   password: "password123",
-//   database: "analytics"
-// });
-
 const db = mysql.createPool({
   host: "127.0.0.1",
   user: "analytics_user",
