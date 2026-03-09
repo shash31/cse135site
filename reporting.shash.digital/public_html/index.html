@@ -9,6 +9,17 @@
     </script> -->
     <script src="https://cdn.zinggrid.com/zinggrid.es6.min.js"></script>
     <script src='https://cdn.zingchart.com/zingchart.min.js'></script>
+    <style>
+      * {
+        margin: 0;
+        box-sizing: border-box;
+      }
+      main{
+        display: flex;
+        flex-direction: column;
+        padding: 2em;
+      }
+    </style>
     <title>CSE 135 HW Lives!</title>
   </head>
 
@@ -18,53 +29,54 @@
     <script>
       document.write(`Live @ ${new Date()}`);
     </script>
+    <main>
+      <zing-grid 
+        caption="Raw Session Analytics" 
+        data='[YOUR_DATABASE_JSON_ARRAY]' 
+        pager page-size="5" 
+        filter sort>
+        
+        <zg-colgroup>
+          <zg-column index="sessionID" header="Session ID"></zg-column>
+          <zg-column index="data.activity.page" header="Page"></zg-column>
+          <zg-column index="staticData.userAgent" header="Browser/OS"></zg-column>
+          <zg-column index="performanceData.totalLoadTime" header="Load Time (ms)"></zg-column>
+        </zg-colgroup>
+      </zing-grid>
 
-    <zing-grid 
-      caption="Raw Session Analytics" 
-      data='[YOUR_DATABASE_JSON_ARRAY]' 
-      pager page-size="5" 
-      filter sort>
-      
-      <zg-colgroup>
-        <zg-column index="sessionID" header="Session ID"></zg-column>
-        <zg-column index="data.activity.page" header="Page"></zg-column>
-        <zg-column index="staticData.userAgent" header="Browser/OS"></zg-column>
-        <zg-column index="performanceData.totalLoadTime" header="Load Time (ms)"></zg-column>
-      </zg-colgroup>
-    </zing-grid>
+      <div id="loadTimeChart"></div>
+      <div id="idleTimeChart"></div>
 
-    <div id="loadTimeChart"></div>
-    <div id="idleTimeChart"></div>
+      <script>
+        // import {zingchart, ZC} from 'zingchart/es6'; // to import the pareto chart module
+        // import 'zingchart/modules-es6/zingchart-pareto.min.js';
 
-    <script>
-      // import {zingchart, ZC} from 'zingchart/es6'; // to import the pareto chart module
-      // import 'zingchart/modules-es6/zingchart-pareto.min.js';
+        const loadTimes = [48, 52, 45, 60]; // performanceData.totalLoadTime
+        const sessionLabels = ["Session A", "Session B", "Session C", "Session D"];
 
-      const loadTimes = [48, 52, 45, 60]; // performanceData.totalLoadTime
-      const sessionLabels = ["Session A", "Session B", "Session C", "Session D"];
+        zingchart.render({
+          id: 'loadTimeChart',
+          data: {
+            type: 'bar',
+            title: { text: 'Performance: Total Load Time (ms)' },
+            scaleX: { labels: sessionLabels },
+            series: [{ values: loadTimes }]
+          }
+        });
 
-      zingchart.render({
-        id: 'loadTimeChart',
-        data: {
-          type: 'bar',
-          title: { text: 'Performance: Total Load Time (ms)' },
-          scaleX: { labels: sessionLabels },
-          series: [{ values: loadTimes }]
-        }
-      });
-
-      zingchart.render({
-        id: 'idleTimeChart',
-        data: {
-          type: 'pie',
-          title: { text: 'Activity Breakdown' },
-          series: [
-            { text: 'Idle', values: [18397] }, // data.activity.idleTimes[0].duration
-            { text: 'Active', values: [259831] } // Calculated from userExit - idleTotal
-          ]
-        }
-      });
-    </script>
+        zingchart.render({
+          id: 'idleTimeChart',
+          data: {
+            type: 'pie',
+            title: { text: 'Activity Breakdown' },
+            series: [
+              { text: 'Idle', values: [18397] }, // data.activity.idleTimes[0].duration
+              { text: 'Active', values: [259831] } // Calculated from userExit - idleTotal
+            ]
+          }
+        });
+      </script>
+    </main>
   </body>
 
 </html>
