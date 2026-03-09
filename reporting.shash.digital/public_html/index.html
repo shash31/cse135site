@@ -4,9 +4,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script type="module">
+    <!-- <script type="module">
       import 'zinggrid';
-    </script>
+    </script> -->
+    <script src="https://cdn.zinggrid.com/zinggrid.es6.min.js"></script>
+    <script src='https://cdn.zingchart.com/zingchart.min.js'></script>
     <title>CSE 135 HW Lives!</title>
   </head>
 
@@ -35,9 +37,9 @@
     <div id="idleTimeChart"></div>
 
     <script>
-      import {zingchart, ZC} from 'zingchart/es6'; // to import the pareto chart module
-      import 'zingchart/modules-es6/zingchart-pareto.min.js';
-      
+      // import {zingchart, ZC} from 'zingchart/es6'; // to import the pareto chart module
+      // import 'zingchart/modules-es6/zingchart-pareto.min.js';
+
       const loadTimes = [48, 52, 45, 60]; // performanceData.totalLoadTime
       const sessionLabels = ["Session A", "Session B", "Session C", "Session D"];
 
