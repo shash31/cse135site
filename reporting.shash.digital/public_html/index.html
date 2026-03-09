@@ -1,94 +1,322 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporting Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent: #0b6bcb;
+      --accent-2: #f97316;
+    }
 
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- <script type="module">
-      import 'zinggrid';
-    </script> -->
-    <script src="https://cdn.zinggrid.com/zinggrid.es6.min.js"></script>
-    <script src='https://cdn.zingchart.com/zingchart.min.js'></script>
-    <style>
-      * {
-        margin: 0;
-        box-sizing: border-box;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+    }
+
+    body {
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top right, #eef6ff 0%, var(--bg) 45%);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    header {
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.04);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .panel h2 {
+      font-size: 1.15rem;
+      margin-bottom: 12px;
+    }
+
+    .status {
+      margin-bottom: 14px;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 860px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px;
+      text-align: left;
+      font-size: 0.9rem;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f9fafb;
+      font-weight: 700;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+
+    .chart-box {
+      background: #fbfdff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 320px;
+    }
+
+    .chart-box h3 {
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      color: #111827;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: 0.92rem;
+      padding: 12px 4px;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 14px;
       }
-      
-      h1, h2 {
-        padding: 1em;
+
+      h1 {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Session Reporting Dashboard</h1>
+    <p class="meta">reporting.shash.digital</p>
+  </header>
+
+  <section class="panel">
+    <p id="status" class="status">Loading analytics data...</p>
+    <div class="table-wrap">
+      <table id="analyticsTable" aria-label="Raw analytics data table">
+        <thead>
+          <tr>
+            <th>Session ID</th>
+            <th>Page</th>
+            <th>Load Time (ms)</th>
+            <th>Browser / OS</th>
+            <th>Viewport</th>
+            <th>Idle Time (ms)</th>
+            <th>Active Time (ms)</th>
+          </tr>
+        </thead>
+        <tbody id="analyticsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Charts</h2>
+    <div class="charts">
+      <div class="chart-box">
+        <h3>Load Time by Session</h3>
+        <canvas id="loadTimeChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Total Idle vs Active Time</h3>
+        <canvas id="activityChart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const API_URL = './api/static';
+    const statusEl = document.getElementById('status');
+    const tableBody = document.getElementById('analyticsBody');
+
+    let loadChart;
+    let activityChart;
+
+    function safeParseData(data) {
+      if (!data) return {};
+      if (typeof data !== 'string') return data;
+
+      try {
+        return JSON.parse(data);
+      } catch {
+        return {};
+      }
+    }
+
+    function parseRow(rawRow) {
+      const parsed = safeParseData(rawRow.data);
+
+      const performanceData = parsed.performanceData || {};
+      const staticData = parsed.staticData || {};
+      const activity = parsed.activity || {};
+      const idleTimes = Array.isArray(activity.idleTimes) ? activity.idleTimes : [];
+      const idleTotal = idleTimes.reduce((sum, item) => sum + (Number(item.duration) || 0), 0);
+      const userExit = Number(activity.userExit) || 0;
+      const userEntry = Number(activity.userEntry) || 0;
+      const activeTotal = userExit > userEntry ? Math.max(0, userExit - userEntry - idleTotal) : 0;
+
+      return {
+        sessionID: rawRow.sessionID,
+        page: activity.page || '(n/a)',
+        loadTime: Number(performanceData.totalLoadTime) || 0,
+        userAgent: staticData.userAgent || '(n/a)',
+        viewport: staticData.windowWidth && staticData.windowHeight
+          ? `${staticData.windowWidth} x ${staticData.windowHeight}`
+          : '(n/a)',
+        idleTotal,
+        activeTotal
+      };
+    }
+
+    function renderTable(rows) {
+      tableBody.innerHTML = '';
+
+      if (!rows.length) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="7" class="empty">No analytics rows found in datastore.</td>';
+        tableBody.appendChild(tr);
+        return;
       }
 
-      main{
-        display: flex;
-        flex-direction: column;
-        padding: 2em;
-      }
-    </style>
-    <title>CSE 135 HW Lives!</title>
-  </head>
+      rows.forEach((row) => {
+        const tr = document.createElement('tr');
+        const cells = [
+          row.sessionID,
+          row.page,
+          row.loadTime,
+          row.userAgent,
+          row.viewport,
+          Math.round(row.idleTotal),
+          Math.round(row.activeTotal)
+        ];
 
-  <body>
-    <h1>CSE 135 HW1 Lives! reporting</h1>
-    <h2>reporting.shash.digital</h2>
-    <script>
-      document.write(`Live @ ${new Date()}`);
-
-
-      let analytics;
-      
-      fetch('./api/static')
-      .then(res => res.json())
-      .then(data => {
-        analytics = data
-        console.log(analytics)
-      })
-    </script>
-    <main>
-      <zing-grid 
-        caption="Raw Session Analytics" 
-        data='[YOUR_DATABASE_JSON_ARRAY]' 
-        pager page-size="5" 
-        filter sort>
-        
-        <zg-colgroup>
-          <zg-column index="sessionID" header="Session ID"></zg-column>
-          <zg-column index="data.activity.page" header="Page"></zg-column>
-          <zg-column index="staticData.userAgent" header="Browser/OS"></zg-column>
-          <zg-column index="performanceData.totalLoadTime" header="Load Time (ms)"></zg-column>
-        </zg-colgroup>
-      </zing-grid>
-
-      <div id="loadTimeChart"></div>
-      <div id="idleTimeChart"></div>
-
-      <script>
-        const loadTimes = [48, 52, 45, 60]; // performanceData.totalLoadTime
-        const sessionLabels = ["Session A", "Session B", "Session C", "Session D"];
-
-        zingchart.render({
-          id: 'loadTimeChart',
-          data: {
-            type: 'bar',
-            title: { text: 'Performance: Total Load Time (ms)' },
-            scaleX: { labels: sessionLabels },
-            series: [{ values: loadTimes }]
-          }
+        cells.forEach((value) => {
+          const td = document.createElement('td');
+          td.textContent = String(value);
+          tr.appendChild(td);
         });
 
-        zingchart.render({
-          id: 'idleTimeChart',
-          data: {
-            type: 'pie',
-            title: { text: 'Activity Breakdown' },
-            series: [
-              { text: 'Idle', values: [18397] }, // data.activity.idleTimes[0].duration
-              { text: 'Active', values: [259831] } // Calculated from userExit - idleTotal
-            ]
-          }
-        });
-      </script>
-    </main>
-  </body>
+        tableBody.appendChild(tr);
+      });
+    }
 
+    function renderCharts(rows) {
+      const labels = rows.map((row) => row.sessionID.slice(0, 8));
+      const loadValues = rows.map((row) => row.loadTime);
+      const totalIdle = rows.reduce((sum, row) => sum + row.idleTotal, 0);
+      const totalActive = rows.reduce((sum, row) => sum + row.activeTotal, 0);
+
+      if (loadChart) loadChart.destroy();
+      if (activityChart) activityChart.destroy();
+
+      loadChart = new Chart(document.getElementById('loadTimeChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Load Time (ms)',
+            data: loadValues,
+            backgroundColor: 'rgba(11, 107, 203, 0.7)',
+            borderColor: 'rgba(11, 107, 203, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+
+      activityChart = new Chart(document.getElementById('activityChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Idle', 'Active'],
+          datasets: [{
+            data: [Math.round(totalIdle), Math.round(totalActive)],
+            backgroundColor: ['rgba(249, 115, 22, 0.75)', 'rgba(16, 185, 129, 0.75)'],
+            borderColor: ['rgba(249, 115, 22, 1)', 'rgba(16, 185, 129, 1)'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    async function loadAnalytics() {
+      try {
+        const response = await fetch(API_URL, { method: 'GET' });
+        if (!response.ok) {
+          throw new Error(`API responded with status ${response.status}`);
+        }
+
+        const rawRows = await response.json();
+        const normalizedRows = rawRows.map(parseRow);
+
+        renderTable(normalizedRows);
+        renderCharts(normalizedRows);
+
+        statusEl.textContent = `Loaded ${normalizedRows.length} session rows at ${new Date().toLocaleString()}.`;
+      } catch (error) {
+        statusEl.textContent = `Failed to load analytics data: ${error.message}`;
+        tableBody.innerHTML = '<tr><td colspan="7" class="empty">Could not load data from /api/static.</td></tr>';
+      }
+    }
+
+    loadAnalytics();
+  </script>
+</body>
 </html>
