@@ -160,10 +160,13 @@
     function send(method, payload) {
         const data = JSON.stringify(payload)
 
+        const credentials = btoa('shash:shash')
+
         if (method == 'POST') {
             fetch(ENDPOINT, {
                 method: 'POST',
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json",
+                            "Authentication": `Basic ${credentials}`},
                 mode: 'cors',
                 body: data,
                 keepalive: true
