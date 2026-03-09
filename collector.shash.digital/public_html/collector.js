@@ -176,7 +176,8 @@
         } else {
             fetch(ENDPOINT+`/${payload.sessionID}`, {
                 method: 'PUT',
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json",
+                            "Authentication": `Basic ${credentials}`},
                 mode: 'cors',
                 body: data,
                 keepalive: true

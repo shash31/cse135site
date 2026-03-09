@@ -7,7 +7,7 @@ const app = express();
 const corsOptions = {
   origin: 'https://test.shash.digital',
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type']
+  allowedHeaders: ['Content-Type', 'Authentication']
 };
 
 app.use(cors(corsOptions));
