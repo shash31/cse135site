@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saved Reports</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #1f2937;
+      background: #f6f7fb;
+      min-height: 100vh;
+    }
+
+    header {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .nav-links a:hover {
+      color: #764ba2;
+    }
+
+    .logout-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .logout-btn:hover {
+      background: #dc2626;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    .header-section {
+      margin-bottom: 28px;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .page-meta {
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+
+    .message {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.error {
+      background: #fecaca;
+      color: #991b1b;
+    }
+
+    .message.success {
+      background: #bbf7d0;
+      color: #065f46;
+    }
+
+    .message.info {
+      background: #bfdbfe;
+      color: #1e40af;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .tab {
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: #667eea;
+    }
+
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .content {
+      display: none;
+    }
+
+    .content.active {
+      display: block;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+
+    .panel h2 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .panel h2 button {
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .panel h2 button:hover {
+      background: #764ba2;
+    }
+
+    .reports-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .report-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .report-card:hover {
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      border-color: #667eea;
+    }
+
+    .report-card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .report-card-section {
+      display: inline-block;
+      background: #ede9fe;
+      color: #6d28d9;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .report-card-meta {
+      color: #6b7280;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+
+    .report-card-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .report-card-actions button {
+      flex: 1;
+      padding: 8px;
+      font-size: 0.8rem;
+      border: 1px solid #d1d5db;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .report-card-actions button:hover {
+      background: #f3f4f6;
+    }
+
+    .report-card-actions button.danger {
+      color: #dc2626;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6b7280;
+    }
+
+    .empty-state h3 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      color: #6b7280;
+      padding: 40px 20px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .modal-buttons button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #764ba2;
+    }
+
+    .btn-secondary {
+      background: #d1d5db;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background: #9ca3af;
+    }
+
+    @media (max-width: 768px) {
+      .reports-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>💾 Saved Reports</h1>
+    <nav class="nav-links">
+      <a href="/dashboard.html">← Back to Dashboard</a>
+    </nav>
+    <button class="logout-btn" onclick="app.logout()">Logout</button>
+  </header>
+
+  <div class="container">
+    <div class="header-section">
+      <h2 class="page-title">View and Manage Reports</h2>
+      <p class="page-meta">Create, view, and export analytics reports</p>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <!-- Tabs for analysts/admins -->
+    <div class="tabs" id="tabs" style="display: none;">
+      <button class="tab active" onclick="reports.switchTab('saved')">Saved Reports</button>
+      <button class="tab" onclick="reports.switchTab('create')">Create New</button>
+    </div>
+
+    <!-- Saved Reports Content -->
+    <div id="saved-tab" class="content active">
+      <div class="panel">
+        <h2>
+          Saved Reports
+          <button id="createBtn" onclick="reports.switchTab('create')" style="display: none;">+ Create Report</button>
+        </h2>
+        <div id="reportsList"></div>
+      </div>
+    </div>
+
+    <!-- Create Report Content (analysts only) -->
+    <div id="create-tab" class="content" style="display: none;">
+      <div class="panel">
+        <h2>Create New Report</h2>
+        <form id="createReportForm">
+          <div class="form-group">
+            <label>Report Name</label>
+            <input type="text" id="reportName" required placeholder="e.g., Tuesday Performance Report" />
+          </div>
+
+          <div class="form-group">
+            <label>Section</label>
+            <select id="reportSection" required>
+              <option value="">Select a section...</option>
+              <option value="performance">Performance</option>
+              <option value="engagement">Engagement</option>
+              <option value="tech">Technology</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Start Date (optional)</label>
+            <input type="date" id="reportStart" />
+          </div>
+
+          <div class="form-group">
+            <label>End Date (optional)</label>
+            <input type="date" id="reportEnd" />
+          </div>
+
+          <button type="submit" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">Create Report</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Detail Modal -->
+  <div id="reportModal" class="modal">
+    <div class="modal-content">
+      <h2 id="modalTitle">Report</h2>
+      <div id="modalBody"></div>
+      <div class="modal-buttons">
+        <button class="btn-secondary" onclick="reports.closeModal()">Close</button>
+        <button class="btn-primary" id="exportBtn" onclick="reports.exportReport()">📥 Export PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+  <script src="/reports.js"></script>
+
+  <noscript>
+    <div style="padding: 20px; background: #fecaca; color: #991b1b; text-align: center;">
+      <strong>JavaScript is required</strong><br />
+      Please enable JavaScript to view reports.
+    </div>
+  </noscript>
+</body>
+</html>

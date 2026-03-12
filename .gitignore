@@ -1,2 +1,6 @@
 .DS_Store
 perlcode/
+node_modules/
+.env
+reporting.shash.digital/public_html/exports/*.pdf
+.vscode

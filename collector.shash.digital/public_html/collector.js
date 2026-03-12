@@ -160,13 +160,14 @@
     function send(method, payload) {
         const data = JSON.stringify(payload)
 
-        const credentials = btoa('shash:shash')
+        // Collector API key (set via server configuration)
+        const COLLECTOR_KEY = 'change_me_collector_key'
 
         if (method == 'POST') {
             fetch(ENDPOINT, {
                 method: 'POST',
                 headers: { "Content-Type": "application/json",
-                            "Authentication": `Basic ${credentials}`},
+                            "X-Collector-Key": COLLECTOR_KEY},
                 mode: 'cors',
                 body: data,
                 keepalive: true
@@ -177,7 +178,7 @@
             fetch(ENDPOINT+`/${payload.sessionID}`, {
                 method: 'PUT',
                 headers: { "Content-Type": "application/json",
-                            "Authentication": `Basic ${credentials}`},
+                            "X-Collector-Key": COLLECTOR_KEY},
                 mode: 'cors',
                 body: data,
                 keepalive: true
@@ -212,10 +213,15 @@
             error: errorData,
             timestamp: new Date().toISOString(),
             url: window.location.href,
-            session: getSessionID()
+            session: getSessionID(),
+            activity: {
+                page: window.location.pathname,
+                userEntry: user_entry_time,
+                userExit: performance.now()
+            }
         };
 
-        send(payload);
+        send('POST', payload);
     }
 
     window.addEventListener('error', (event) => {

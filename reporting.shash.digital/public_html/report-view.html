@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #1f2937;
+      background: white;
+      padding: 40px;
+      line-height: 1.6;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 6px;
+      color: #111827;
+    }
+
+    .report-header {
+      margin-bottom: 32px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .report-meta {
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+
+    .report-meta-item {
+      margin: 4px 0;
+    }
+
+    .section-label {
+      display: inline-block;
+      background: #ede9fe;
+      color: #6d28d9;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-box {
+      background: #f3f4f6;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-label {
+      color: #6b7280;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .charts-section {
+      margin-bottom: 32px;
+      page-break-after: always;
+    }
+
+    .chart-container {
+      margin-bottom: 24px;
+      padding: 16px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .chart-container h3 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      color: #374151;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 400px;
+      margin-bottom: 16px;
+    }
+
+    .chart-wrapper canvas {
+      max-height: 400px;
+    }
+
+    .table-section {
+      margin-bottom: 32px;
+      page-break-after: always;
+    }
+
+    .table-section h3 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      color: #374151;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: #f3f4f6;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid #d1d5db;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    .comments-section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 2px solid #e5e7eb;
+    }
+
+    .comments-section h3 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      color: #374151;
+    }
+
+    .comment {
+      background: #f9fafb;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-left: 4px solid #667eea;
+      border-radius: 4px;
+    }
+
+    .comment-author {
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .comment-date {
+      color: #9ca3af;
+      font-size: 0.85rem;
+      margin-left: 8px;
+    }
+
+    .comment-text {
+      margin-top: 6px;
+      color: #1f2937;
+      line-height: 1.5;
+    }
+
+    .no-comments {
+      color: #9ca3af;
+    }
+
+    .footer {
+      text-align: center;
+      color: #9ca3af;
+      font-size: 0.85rem;
+      margin-top: 40px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 16px;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="errorMsg" style="display: none; background: #fecaca; color: #991b1b; padding: 16px; border-radius: 8px; margin-bottom: 16px;"></div>
+
+  <div id="reportContent">
+    <div style="text-align: center; padding: 40px;">
+      <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #667eea; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+      <p style="margin-top: 16px; color: #6b7280;">Loading report...</p>
+    </div>
+  </div>
+
+  <style>
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+
+  <script>
+    /**
+     * Load and render report for PDF export
+     */
+    async function loadReport() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const reportId = Number(params.get('reportId'));
+        const exportToken = params.get('exportToken');
+
+        if (!reportId) {
+          throw new Error('No report ID provided');
+        }
+
+        // Fetch report data
+        const response = await fetch(`/api/reports/${reportId}/data${exportToken ? `?exportToken=${exportToken}` : ''}`, {
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to load report');
+        }
+
+        const { report, metrics, comments } = await response.json();
+
+        // Render report
+        renderReport(report, metrics, comments);
+
+        // Wait for charts to render, then trigger PDF print
+        setTimeout(() => {
+          if (window.print) {
+            window.print();
+          }
+        }, 1000);
+      } catch (error) {
+        const errorDiv = document.getElementById('errorMsg');
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+        document.getElementById('reportContent').innerHTML = '';
+      }
+    }
+
+    /**
+     * Render the report
+     */
+    function renderReport(report, metrics, comments) {
+      const { summary, charts, table } = metrics || {};
+      const content = document.getElementById('reportContent');
+
+      let html = '';
+
+      // Header
+      html += `
+        <div class="report-header">
+          <h1>${escapeHtml(report.name)}</h1>
+          <div class="section-label">${getSectionIcon(report.section)} ${report.section}</div>
+          <div class="report-meta">
+            <div class="report-meta-item"><strong>Report ID:</strong> ${report.id}</div>
+            <div class="report-meta-item"><strong>Created:</strong> ${new Date(report.createdAt).toLocaleString()}</div>
+            <div class="report-meta-item"><strong>Created By:</strong> ${report.createdByName || 'System'}</div>
+            <div class="report-meta-item"><strong>Generated:</strong> ${new Date().toLocaleString()}</div>
+          </div>
+        </div>
+      `;
+
+      // Summary stats
+      if (summary) {
+        html += '<div class="summary">';
+        if (report.section === 'performance') {
+          html += `
+            <div class="stat-box">
+              <div class="stat-label">Sessions</div>
+              <div class="stat-value">${summary.sessions}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Avg Load Time</div>
+              <div class="stat-value">${summary.averageLoadMs}ms</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">P95 Load Time</div>
+              <div class="stat-value">${summary.p95LoadMs}ms</div>
+            </div>
+          `;
+        } else if (report.section === 'engagement') {
+          html += `
+            <div class="stat-box">
+              <div class="stat-label">Sessions</div>
+              <div class="stat-value">${summary.sessions}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Idle Time</div>
+              <div class="stat-value">${Math.round(summary.totalIdleMs / 1000)}s</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Active Time</div>
+              <div class="stat-value">${Math.round(summary.totalActiveMs / 1000)}s</div>
+            </div>
+          `;
+        } else if (report.section === 'tech') {
+          html += `
+            <div class="stat-box">
+              <div class="stat-label">Sessions</div>
+              <div class="stat-value">${summary.sessions}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Browsers</div>
+              <div class="stat-value">${summary.uniqueBrowsers}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">OS Types</div>
+              <div class="stat-value">${summary.uniqueOs}</div>
+            </div>
+          `;
+        }
+        html += '</div>';
+      }
+
+      // Charts
+      if (charts && Object.keys(charts).length > 0) {
+        html += '<div class="charts-section">';
+        const chartType = report.section === 'performance' ? 'loadTimeBySession'
+          : report.section === 'engagement' ? 'idleVsActive'
+          : 'browserShare';
+        const chartData = charts[chartType];
+
+        if (chartData) {
+          html += `
+            <div class="chart-container">
+              <h3>${report.section.charAt(0).toUpperCase() + report.section.slice(1)} Chart</h3>
+              <div class="chart-wrapper">
+                <canvas id="reportChart"></canvas>
+              </div>
+            </div>
+          `;
+        }
+        html += '</div>';
+      }
+
+      // Table
+      if (table && table.length > 0) {
+        html += `
+          <div class="table-section">
+            <h3>Data (first 10 rows)</h3>
+            <table>
+              <thead>
+                <tr>
+        `;
+
+        if (report.section === 'performance') {
+          html += '<th>Session</th><th>Page</th><th>Load (ms)</th><th>Start</th><th>End</th><th>Date</th>';
+        } else if (report.section === 'engagement') {
+          html += '<th>Session</th><th>Page</th><th>Idle (ms)</th><th>Active (ms)</th><th>Date</th>';
+        } else {
+          html += '<th>Session</th><th>Page</th><th>Browser</th><th>OS</th><th>Device</th><th>Viewport</th>';
+        }
+
+        html += `
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        table.slice(0, 10).forEach((row) => {
+          html += '<tr>';
+          if (report.section === 'performance') {
+            html += `<td>${row.sessionID.slice(0, 8)}</td><td>${row.page}</td><td>${row.loadTime}</td><td>${row.startLoad}</td><td>${row.endLoad}</td><td>${new Date(row.createdAt).toLocaleDateString()}</td>`;
+          } else if (report.section === 'engagement') {
+            html += `<td>${row.sessionID.slice(0, 8)}</td><td>${row.page}</td><td>${row.idleTotal}</td><td>${row.activeTotal}</td><td>${new Date(row.createdAt).toLocaleDateString()}</td>`;
+          } else {
+            html += `<td>${row.sessionID.slice(0, 8)}</td><td>${row.page}</td><td>${row.browser}</td><td>${row.os}</td><td>${row.device}</td><td>${row.viewport}</td>`;
+          }
+          html += '</tr>';
+        });
+
+        html += `
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      // Comments
+      if (comments && comments.length > 0) {
+        html += `
+          <div class="comments-section">
+            <h3>Analyst Comments</h3>
+        `;
+
+        comments.forEach((comment) => {
+          html += `
+            <div class="comment">
+              <div>
+                <span class="comment-author">${escapeHtml(comment.author || 'Unknown')}</span>
+                <span class="comment-date">${new Date(comment.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div class="comment-text">${escapeHtml(comment.comment)}</div>
+            </div>
+          `;
+        });
+
+        html += '</div>';
+      }
+
+      // Footer
+      html += `
+        <div class="footer">
+          <p>Report generated on ${new Date().toLocaleString()}</p>
+          <p>reporting.shash.digital</p>
+        </div>
+      `;
+
+      content.innerHTML = html;
+
+      // Initialize charts if present
+      if (charts && Object.keys(charts).length > 0) {
+        initializeReportChart(report.section, charts);
+      }
+    }
+
+    /**
+     * Initialize chart for report
+     */
+    function initializeReportChart(section, charts) {
+      const chartType = section === 'performance' ? 'loadTimeBySession'
+        : section === 'engagement' ? 'idleVsActive'
+        : 'browserShare';
+      const chartData = charts[chartType];
+
+      if (!chartData) return;
+
+      const canvas = document.getElementById('reportChart');
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const type = section === 'engagement' ? 'doughnut' : 'bar';
+
+      new Chart(ctx, {
+        type: type,
+        data: {
+          labels: chartData.labels,
+          datasets: [
+            {
+              label: section.charAt(0).toUpperCase() + section.slice(1),
+              data: chartData.values,
+              backgroundColor: type === 'doughnut'
+                ? ['#667eea', '#764ba2', '#f97316', '#10b981', '#f59e0b', '#ef4444']
+                : '#667eea',
+              borderColor: '#fff',
+              borderWidth: 2,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+            },
+          },
+        },
+      });
+    }
+
+    /**
+     * Get icon for section
+     */
+    function getSectionIcon(section) {
+      const icons = {
+        performance: '⚡',
+        engagement: '👥',
+        tech: '🛠️',
+      };
+      return icons[section] || '📊';
+    }
+
+    /**
+     * Escape HTML
+     */
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Load report on page load
+    document.addEventListener('DOMContentLoaded', loadReport);
+  </script>
+
+  <noscript>
+    <div style="padding: 20px; background: #fecaca; color: #991b1b;">
+      <strong>JavaScript is required</strong>
+    </div>
+  </noscript>
+</body>
+</html>
