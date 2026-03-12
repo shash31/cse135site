@@ -43,6 +43,14 @@
       font-size: 0.95rem;
     }
 
+    a {
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
     .panel {
       background: var(--card);
       border: 1px solid var(--border);
@@ -136,8 +144,21 @@
 </head>
 <body>
   <header>
-    <h1>Session Reporting Dashboard</h1>
-    <p class="meta">reporting.shash.digital</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <div>
+        <h1>Session Reporting Dashboard</h1>
+        <p class="meta">reporting.shash.digital</p>
+      </div>
+      <div style="text-align: right; font-size: 0.9rem;">
+        <p id="userInfo" style="color: var(--muted); margin-bottom: 8px;">Loading...</p>
+        <div id="navLinks" style="display: flex; gap: 12px;">
+          <a href="/dashboard.html" style="color: var(--accent); text-decoration: none;">Dashboard</a>
+          <a href="/reports.html" style="color: var(--accent); text-decoration: none;">Reports</a>
+          <a href="#" id="adminLink" style="color: var(--accent); text-decoration: none; display: none;">Admin</a>
+          <a href="#" onclick="app.logout(); return false;" style="color: #ef4444; text-decoration: none; cursor: pointer;">Logout</a>
+        </div>
+      </div>
+    </div>
   </header>
 
   <section class="panel">
@@ -174,6 +195,7 @@
     </div>
   </section>
 
+  <script src="app.js"></script>
   <script>
     const API_URL = './api/static';
     const statusEl = document.getElementById('status');
@@ -181,6 +203,28 @@
 
     let loadChart;
     let activityChart;
+    
+    // Initialize authentication first
+    document.addEventListener('DOMContentLoaded', async () => {
+      await app.init();
+      
+      // Redirect to login if not authenticated
+      if (!app.user) {
+        window.location.href = '/login.html';
+        return;
+      }
+      
+      // Setup user info and navigation
+      document.getElementById('userInfo').textContent = `${app.user.username} (${app.user.role})`;
+      
+      // Show admin link for super admin
+      if (app.isSuperAdmin()) {
+        document.getElementById('adminLink').style.display = 'inline';
+        document.getElementById('adminLink').href = '/admin.html';
+      }
+      
+      loadAnalytics();
+    });
 
     function safeParseData(data) {
       if (!data) return {};
@@ -309,12 +353,7 @@
 
     async function loadAnalytics() {
       try {
-        const response = await fetch(API_URL, { method: 'GET' });
-        if (!response.ok) {
-          throw new Error(`API responded with status ${response.status}`);
-        }
-
-        const rawRows = await response.json();
+        const rawRows = await app.apiCall('GET', '/api/static');
         const normalizedRows = rawRows.map(parseRow);
 
         renderTable(normalizedRows);
@@ -326,8 +365,6 @@
         tableBody.innerHTML = '<tr><td colspan="7" class="empty">Could not load data from /api/static.</td></tr>';
       }
     }
-
-    loadAnalytics();
   </script>
 </body>
 </html>
