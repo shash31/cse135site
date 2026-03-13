@@ -853,8 +853,10 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
         '--disable-gpu',
+        '--proxy-server="direct://"', 
+        '--proxy-bypass-list=*',
+        '--disable-dev-shm-usage',
         '--single-process'
       ]
     });
