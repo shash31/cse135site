@@ -233,7 +233,6 @@
           throw new Error('No report ID provided');
         }
 
-        // Fetch report data
         const response = await fetch(`/api/reports/${reportId}/data${exportToken ? `?exportToken=${exportToken}` : ''}`, {
           credentials: 'include',
         });
@@ -245,10 +244,8 @@
 
         const { report, metrics, comments } = await response.json();
 
-        // Render report
         renderReport(report, metrics, comments);
 
-        // Wait for charts to render, then trigger PDF print
         setTimeout(() => {
           if (window.print) {
             window.print();
@@ -262,20 +259,16 @@
       }
     }
 
-    /**
-     * Render the report
-     */
     function renderReport(report, metrics, comments) {
       const { summary, charts, table } = metrics || {};
       const content = document.getElementById('reportContent');
 
       let html = '';
 
-      // Header
       html += `
         <div class="report-header">
           <h1>${escapeHtml(report.name)}</h1>
-          <div class="section-label">${getSectionIcon(report.section)} ${report.section}</div>
+          <div class="section-label">${report.section}</div>
           <div class="report-meta">
             <div class="report-meta-item"><strong>Report ID:</strong> ${report.id}</div>
             <div class="report-meta-item"><strong>Created:</strong> ${new Date(report.createdAt).toLocaleString()}</div>
@@ -437,11 +430,11 @@
       if (charts && Object.keys(charts).length > 0) {
         initializeReportChart(report.section, charts);
       }
+
+      // Mark as ready for PDF export
+      content.setAttribute('data-report-ready', 'true');
     }
 
-    /**
-     * Initialize chart for report
-     */
     function initializeReportChart(section, charts) {
       const chartType = section === 'performance' ? 'loadTimeBySession'
         : section === 'engagement' ? 'idleVsActive'
@@ -484,28 +477,12 @@
       });
     }
 
-    /**
-     * Get icon for section
-     */
-    function getSectionIcon(section) {
-      const icons = {
-        performance: '⚡',
-        engagement: '👥',
-        tech: '🛠️',
-      };
-      return icons[section] || '📊';
-    }
-
-    /**
-     * Escape HTML
-     */
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
 
-    // Load report on page load
     document.addEventListener('DOMContentLoaded', loadReport);
   </script>
 

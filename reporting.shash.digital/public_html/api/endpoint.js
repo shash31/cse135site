@@ -842,15 +842,21 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
   try {
     console.log(`[PDF Export] Starting export for report ${reportId}`);
     console.log(`[PDF Export] Target URL: ${exportUrl}`);
-    
-    const launchEnv = { ...process.env, LD_PRELOAD: '' };
-    
+
     browser = await puppeteer.launch({
-      executablePath: '/snap/bin/chromium',
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
-      headless: 'new',
-      env: launchEnv,
-      timeout: 120000, 
+      executablePath: '/usr/bin/chromium-browser',
+      headless: true,
+      env: {
+        ...process.env,
+        LD_PRELOAD: ''
+      },
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process'
+      ]
     });
     
     console.log(`[PDF Export] Browser launched successfully`);
@@ -858,7 +864,6 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
     const page = await browser.newPage();
     console.log(`[PDF Export] New page created`);
     
-    // More lenient page load strategy
     await page.goto(exportUrl, { 
       waitUntil: "load", 
       timeout: 30000 
@@ -866,7 +871,15 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
       console.warn(`[PDF Export] Page load warning: ${err.message}`);
     });
     
-    console.log(`[PDF Export] Page loaded, generating PDF`);
+    console.log(`[PDF Export] Page loaded, waiting for report to render...`);
+    
+    // Wait for the report to be fully rendered
+    await page.waitForSelector('[data-report-ready="true"]', { timeout: 30000 })
+      .catch(err => {
+        console.warn(`[PDF Export] Report ready marker not found: ${err.message}`);
+      });
+    
+    console.log(`[PDF Export] Report ready, generating PDF`);
     
     await page.pdf({ 
       path: filePath, 
