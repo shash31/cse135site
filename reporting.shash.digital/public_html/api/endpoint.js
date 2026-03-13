@@ -840,17 +840,46 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
 
   let browser;
   try {
+    console.log(`[PDF Export] Starting export for report ${reportId}`);
+    console.log(`[PDF Export] Target URL: ${exportUrl}`);
+    
     browser = await puppeteer.launch({
       executablePath: '/usr/bin/chromium-browser',
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
+      headless: true,
     });
+    
+    console.log(`[PDF Export] Browser launched successfully`);
+    
     const page = await browser.newPage();
-    await page.goto(exportUrl, { waitUntil: "networkidle0", timeout: 60000 });
-    await page.pdf({ path: filePath, format: "A4", printBackground: true });
+    console.log(`[PDF Export] New page created`);
+    
+    // More lenient page load strategy
+    await page.goto(exportUrl, { 
+      waitUntil: "load", 
+      timeout: 30000 
+    }).catch(err => {
+      console.warn(`[PDF Export] Page load warning: ${err.message}`);
+    });
+    
+    console.log(`[PDF Export] Page loaded, generating PDF`);
+    
+    await page.pdf({ 
+      path: filePath, 
+      format: "A4", 
+      printBackground: true,
+      margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' }
+    });
+    
+    console.log(`[PDF Export] PDF generated successfully at ${filePath}`);
   } catch (error) {
+    console.error(`[PDF Export] Error for report ${reportId}:`, error);
     return jsonError(res, 500, `Export failed: ${error.message}`);
   } finally {
-    if (browser) await browser.close();
+    if (browser) {
+      await browser.close();
+      console.log(`[PDF Export] Browser closed`);
+    }
   }
 
   const publicPath = `/exports/${fileName}`;
