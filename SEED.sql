@@ -90,9 +90,9 @@ ON DUPLICATE KEY UPDATE name=name;
 -- Passwords: admin/admin, analyst/analyst, viewer/viewer
 
 INSERT INTO users (username, password_hash, role) VALUES
-  ('admin', '$2b$10$KFAWcvSZ0Rjj/YvMLB9LIuVYL3pWvX9XqKD2J0L0Z.1L9R9cqoSJi', 'super_admin'),
-  ('analyst', '$2b$10$pMvh4TZ8dZjBZ9FjQzVKM.yxvQx8OzNLz8k2j3Z9r8.3R8K3sZM1C', 'analyst'),
-  ('viewer', '$2b$10$OUqZbLp8yZvJ3r9l7k5.0ufGnA8Yk6Z2K8jB9N3M2L7P1Q6Y0D0K6', 'viewer')
+  ('admin', '$2b$10$cwjMHtF0v0hqHLuCDc4Ha.N9MQt9I6TY9Q9pkdfRPFIoWQWfcpqp2', 'super_admin'),
+  ('analyst', '$2b$10$lcZjWTi8.j.luZ3roN1lbuHIPPiAsRdoNuOA2Gt/b9moh.l8Sw1qK', 'analyst'),
+  ('viewer', '$2b$10$HavSpWOVhpHMzH8o/5W71OZols/QSqmHxAomTUfmNurETr0ZV5HeG', 'viewer')
 ON DUPLICATE KEY UPDATE password_hash=password_hash;
 
 -- Assign analyst to all sections
@@ -103,5 +103,5 @@ ON DUPLICATE KEY UPDATE section_id=section_id;
 -- Note: admins don't need user_sections as they have full access
 -- Note: viewers don't have direct section access; they only see saved reports
 
--- Create index for session cleanup
-CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires);
+-- Create index for session cleanup (comment out if you get syntax errors)
+-- CREATE INDEX idx_sessions_expires ON sessions(expires);

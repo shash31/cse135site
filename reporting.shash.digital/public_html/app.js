@@ -1,12 +1,8 @@
-// Global app singleton
 const app = {
   user: null,
   apiBaseUrl: '/api',
   currentUser: null,
 
-  /**
-   * Initialize app - check if user is logged in
-   */
   async init() {
     try {
       const response = await fetch(`${this.apiBaseUrl}/auth/me`, {
@@ -24,9 +20,6 @@ const app = {
     return null;
   },
 
-  /**
-   * Login user
-   */
   async login(username, password) {
     const response = await fetch(`${this.apiBaseUrl}/auth/login`, {
       method: 'POST',
@@ -46,9 +39,6 @@ const app = {
     return { ok: true, user: data };
   },
 
-  /**
-   * Logout user
-   */
   async logout() {
     await fetch(`${this.apiBaseUrl}/auth/logout`, {
       method: 'POST',
@@ -59,38 +49,23 @@ const app = {
     window.location.href = '/login.html';
   },
 
-  /**
-   * Get current user
-   */
   async getCurrentUser() {
     if (this.user) return this.user;
     return this.init();
   },
 
-  /**
-   * Check if current user is super admin
-   */
   isSuperAdmin() {
     return this.user?.role === 'super_admin';
   },
 
-  /**
-   * Check if current user is analyst
-   */
   isAnalyst() {
     return this.user?.role === 'analyst';
   },
 
-  /**
-   * Check if current user is viewer
-   */
   isViewer() {
     return this.user?.role === 'viewer';
   },
 
-  /**
-   * Check if user has access to section
-   */
   hasAccessToSection(sectionName) {
     if (this.isSuperAdmin()) return true;
     if (this.isAnalyst()) {
@@ -99,9 +74,6 @@ const app = {
     return false; // Viewers don't have direct section access
   },
 
-  /**
-   * Fetch data from API endpoint
-   */
   async apiCall(method, endpoint, body = null) {
     const options = {
       method,
@@ -141,16 +113,10 @@ const app = {
     return response.json();
   },
 
-  /**
-   * Get users (super admin only)
-   */
   async getUsers() {
     return this.apiCall('GET', '/users');
   },
 
-  /**
-   * Create user (super admin only)
-   */
   async createUser(username, password, role, sections = []) {
     return this.apiCall('POST', '/users', {
       username,
@@ -160,37 +126,22 @@ const app = {
     });
   },
 
-  /**
-   * Update user (super admin only)
-   */
   async updateUser(userId, updates) {
     return this.apiCall('PUT', `/users/${userId}`, updates);
   },
 
-  /**
-   * Delete user (super admin only)
-   */
   async deleteUser(userId) {
     return this.apiCall('DELETE', `/users/${userId}`);
   },
 
-  /**
-   * Update user sections (super admin only)
-   */
   async updateUserSections(userId, sections) {
     return this.apiCall('PUT', `/users/${userId}/sections`, { sections });
   },
 
-  /**
-   * Get all sections
-   */
   async getSections() {
     return this.apiCall('GET', '/sections');
   },
 
-  /**
-   * Get metrics for a section
-   */
   async getMetrics(section, filters = {}) {
     const params = new URLSearchParams();
     if (filters.start) params.append('start', filters.start);
@@ -203,23 +154,14 @@ const app = {
     return this.apiCall('GET', endpoint);
   },
 
-  /**
-   * Get all reports
-   */
   async getReports() {
     return this.apiCall('GET', '/reports');
   },
 
-  /**
-   * Get single report
-   */
   async getReport(reportId) {
     return this.apiCall('GET', `/reports/${reportId}`);
   },
 
-  /**
-   * Get report data (with metrics and comments)
-   */
   async getReportData(reportId, exportToken = null) {
     const endpoint = exportToken
       ? `/reports/${reportId}/data?exportToken=${exportToken}`
@@ -227,9 +169,6 @@ const app = {
     return this.apiCall('GET', endpoint);
   },
 
-  /**
-   * Create report
-   */
   async createReport(name, section, filters = {}) {
     return this.apiCall('POST', '/reports', {
       name,
@@ -238,44 +177,26 @@ const app = {
     });
   },
 
-  /**
-   * Update report
-   */
   async updateReport(reportId, updates) {
     return this.apiCall('PUT', `/reports/${reportId}`, updates);
   },
 
-  /**
-   * Delete report
-   */
   async deleteReport(reportId) {
     return this.apiCall('DELETE', `/reports/${reportId}`);
   },
 
-  /**
-   * Get report comments
-   */
   async getReportComments(reportId) {
     return this.apiCall('GET', `/reports/${reportId}/comments`);
   },
 
-  /**
-   * Add comment to report
-   */
   async addReportComment(reportId, comment) {
     return this.apiCall('POST', `/reports/${reportId}/comments`, { comment });
   },
 
-  /**
-   * Export report to PDF
-   */
   async exportReportPdf(reportId) {
     return this.apiCall('POST', `/reports/${reportId}/export`);
   },
 
-  /**
-   * Ensure user is authenticated
-   */
   async requireAuth() {
     const user = await this.getCurrentUser();
     if (!user) {
@@ -285,9 +206,6 @@ const app = {
     return user;
   },
 
-  /**
-   * Ensure user has required role
-   */
   async requireRole(...roles) {
     const user = await this.requireAuth();
     if (!roles.includes(user.role)) {
@@ -297,7 +215,6 @@ const app = {
   },
 };
 
-// Auto-init on page load
 document.addEventListener('DOMContentLoaded', async () => {
   await app.init();
 });

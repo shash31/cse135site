@@ -208,16 +208,13 @@
     document.addEventListener('DOMContentLoaded', async () => {
       await app.init();
       
-      // Redirect to login if not authenticated
       if (!app.user) {
         window.location.href = '/login.html';
         return;
       }
       
-      // Setup user info and navigation
       document.getElementById('userInfo').textContent = `${app.user.username} (${app.user.role})`;
       
-      // Show admin link for super admin
       if (app.isSuperAdmin()) {
         document.getElementById('adminLink').style.display = 'inline';
         document.getElementById('adminLink').href = '/admin.html';

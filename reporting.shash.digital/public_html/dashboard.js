@@ -4,9 +4,6 @@ const dashboard = {
   charts: {},
   filters: {},
 
-  /**
-   * Initialize dashboard
-   */
   async init() {
     try {
       await app.requireAuth();
@@ -19,15 +16,12 @@ const dashboard = {
     }
   },
 
-  /**
-   * Setup user info display
-   */
   setupUserInfo() {
     const userInfo = document.getElementById('userInfo');
     const roleLabel = {
-      super_admin: '👑 Super Admin',
-      analyst: '👨‍💼 Analyst',
-      viewer: '👁️ Viewer',
+      super_admin: 'Super Admin',
+      analyst: 'Analyst',
+      viewer: 'Viewer',
     };
     userInfo.textContent = `${app.user.username} (${roleLabel[app.user.role]})`;
   },
@@ -43,7 +37,7 @@ const dashboard = {
     if (app.isAnalyst() || app.isViewer() || app.isSuperAdmin()) {
       const reportsLink = document.createElement('a');
       reportsLink.href = '/reports.html';
-      reportsLink.textContent = '💾 Saved Reports';
+      reportsLink.textContent = 'Saved Reports';
       navLinks.appendChild(reportsLink);
     }
 
@@ -51,7 +45,7 @@ const dashboard = {
     if (app.isSuperAdmin()) {
       const adminLink = document.createElement('a');
       adminLink.href = '/admin.html';
-      adminLink.textContent = '⚙️ Admin Panel';
+      adminLink.textContent = 'Admin Panel';
       navLinks.appendChild(adminLink);
     }
   },
@@ -68,15 +62,12 @@ const dashboard = {
     tabsDiv.innerHTML = '';
     contentArea.innerHTML = '';
 
-    // Filter sections based on user access
     let accessibleSections = sections;
     if (app.isAnalyst()) {
       accessibleSections = sections.filter((s) => userSections.includes(s.name));
     } else if (app.isViewer()) {
-      // Viewers don't directly view sections, but we need to allow analysts/admins
       accessibleSections = sections;
     } else if (app.isSuperAdmin()) {
-      // Super admins can see all sections
       accessibleSections = sections;
     }
 
@@ -92,11 +83,10 @@ const dashboard = {
     accessibleSections.forEach((section, idx) => {
       const tab = document.createElement('button');
       tab.className = 'tab' + (idx === 0 ? ' active' : '');
-      tab.textContent = this.getSectionIcon(section.name) + ' ' + this.capitalizeSection(section.name);
+      tab.textContent = section.name.charAt(0).toUpperCase() + section.name.slice(1);;
       tab.onclick = () => this.switchSection(section.name);
       tabsDiv.appendChild(tab);
 
-      // Create content div
       const content = document.createElement('div');
       content.className = 'section-content' + (idx === 0 ? ' active' : '');
       content.id = `section-${section.name}`;
@@ -107,9 +97,6 @@ const dashboard = {
     this.currentSection = accessibleSections[0].name;
   },
 
-  /**
-   * Switch between sections
-   */
   async switchSection(sectionName) {
     if (this.currentSection === sectionName) return;
 
@@ -130,9 +117,6 @@ const dashboard = {
     await this.loadMetricsForSection(sectionName);
   },
 
-  /**
-   * Load all metrics for all accessible sections
-   */
   async loadAllMetrics() {
     const sections = document.querySelectorAll('.section-content');
     for (const section of sections) {
@@ -141,9 +125,6 @@ const dashboard = {
     }
   },
 
-  /**
-   * Load metrics for a specific section
-   */
   async loadMetricsForSection(sectionName) {
     try {
       const filters = this.buildFilters();
@@ -153,7 +134,6 @@ const dashboard = {
       const sectionDiv = document.getElementById(`section-${sectionName}`);
       sectionDiv.innerHTML = this.renderSectionContent(sectionName, data);
 
-      // Initialize charts
       this.initializeSectionCharts(sectionName, data);
 
       // Update timestamp
@@ -164,9 +144,6 @@ const dashboard = {
     }
   },
 
-  /**
-   * Build filter object from UI
-   */
   buildFilters() {
     const start = document.getElementById('filterStart')?.value;
     const end = document.getElementById('filterEnd')?.value;
@@ -176,18 +153,12 @@ const dashboard = {
     };
   },
 
-  /**
-   * Reset filters
-   */
   resetFilters() {
     document.getElementById('filterStart').value = '';
     document.getElementById('filterEnd').value = '';
     this.loadAllMetrics();
   },
 
-  /**
-   * Render section content (summary, charts, table, comments)
-   */
   renderSectionContent(sectionName, data) {
     const { metrics } = data;
     if (!metrics) {
@@ -204,9 +175,6 @@ const dashboard = {
     return renderer ? renderer(metrics) : '<div class="empty-state"><h3>Unknown section</h3></div>';
   },
 
-  /**
-   * Render performance section
-   */
   renderPerformanceSection(metrics) {
     const { summary, charts, table } = metrics;
     let html = '<div class="panel">';
@@ -221,7 +189,7 @@ const dashboard = {
 
     // Charts
     html += '<div class="charts-grid">';
-    html += '<div class="chart-box"><h3>Load Time by Session</h3><canvas id="chart-perf-loadtime"></canvas></div>';
+    html += '<div class="chart-box"><h3>Load Time by Session</h3><canvas id="chart-performance-loadtime"></canvas></div>';
     html += '</div>';
 
     // Table
@@ -240,9 +208,6 @@ const dashboard = {
     return html;
   },
 
-  /**
-   * Render engagement section
-   */
   renderEngagementSection(metrics) {
     const { summary, charts, table } = metrics;
     let html = '<div class="panel">';
@@ -276,9 +241,6 @@ const dashboard = {
     return html;
   },
 
-  /**
-   * Render tech section
-   */
   renderTechSection(metrics) {
     const { summary, charts, table } = metrics;
     let html = '<div class="panel">';
@@ -312,9 +274,6 @@ const dashboard = {
     return html;
   },
 
-  /**
-   * Initialize charts for section
-   */
   initializeSectionCharts(sectionName, data) {
     const { metrics } = data;
     if (!metrics || !metrics.charts) return;
@@ -336,9 +295,6 @@ const dashboard = {
     }
   },
 
-  /**
-   * Create a chart
-   */
   createChart(sectionName, chartId, chartData, chartType, chartLabel) {
     const canvasId = `chart-${sectionName}-${chartId}`;
     const canvas = document.getElementById(canvasId);
@@ -384,9 +340,6 @@ const dashboard = {
     this.charts[sectionName][chartId] = new Chart(ctx, chartConfig);
   },
 
-  /**
-   * Show message
-   */
   showMessage(text, type = 'info') {
     const msg = document.getElementById('message');
     msg.textContent = text;
@@ -395,28 +348,8 @@ const dashboard = {
       msg.classList.remove('show');
     }, 5000);
   },
-
-  /**
-   * Helper: get icon for section
-   */
-  getSectionIcon(sectionName) {
-    const icons = {
-      performance: '⚡',
-      engagement: '👥',
-      tech: '🛠️',
-    };
-    return icons[sectionName] || '📊';
-  },
-
-  /**
-   * Helper: capitalize section name
-   */
-  capitalizeSection(name) {
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  },
 };
 
-// Auto-init on page load
 document.addEventListener('DOMContentLoaded', () => {
   dashboard.init();
 });
