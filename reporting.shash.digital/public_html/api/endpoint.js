@@ -843,10 +843,14 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
     console.log(`[PDF Export] Starting export for report ${reportId}`);
     console.log(`[PDF Export] Target URL: ${exportUrl}`);
     
+    const launchEnv = { ...process.env, LD_PRELOAD: '' };
+    
     browser = await puppeteer.launch({
-      executablePath: '/usr/bin/chromium-browser',
+      executablePath: '/snap/bin/chromium',
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
-      headless: true,
+      headless: 'new',
+      env: launchEnv,
+      timeout: 120000, 
     });
     
     console.log(`[PDF Export] Browser launched successfully`);
