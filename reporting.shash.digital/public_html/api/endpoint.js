@@ -841,6 +841,7 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
   let browser;
   try {
     browser = await puppeteer.launch({
+      executablePath: '/usr/bin/chromium-browser',
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     const page = await browser.newPage();

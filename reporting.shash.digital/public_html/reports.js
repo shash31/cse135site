@@ -341,10 +341,7 @@ const reports = {
     this.currentReportData = null;
   },
 
-  /**
-   * Switch tab
-   */
-  switchTab(tabName) {
+  switchTab(tabName, eventTarget = null) {
     if (tabName === 'create' && !(app.isAnalyst() || app.isSuperAdmin())) {
       return;
     }
@@ -353,7 +350,18 @@ const reports = {
     document.querySelectorAll('.tab').forEach((tab) => {
       tab.classList.remove('active');
     });
-    event.target.classList.add('active');
+    
+    // Mark the clicked tab as active (if event target provided)
+    if (eventTarget) {
+      eventTarget.classList.add('active');
+    } else {
+      // When called programmatically, find and mark the corresponding tab
+      document.querySelectorAll('.tab').forEach((tab) => {
+        if (tab.getAttribute('data-tab') === tabName) {
+          tab.classList.add('active');
+        }
+      });
+    }
 
     // Update content
     document.querySelectorAll('.content').forEach((content) => {

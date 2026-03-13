@@ -383,7 +383,7 @@
 </head>
 <body>
   <header>
-    <h1>💾 Saved Reports</h1>
+    <h1>Saved Reports</h1>
     <nav class="nav-links">
       <a href="/dashboard.html">← Back to Dashboard</a>
     </nav>
@@ -400,8 +400,8 @@
 
     <!-- Tabs for analysts/admins -->
     <div class="tabs" id="tabs" style="display: none;">
-      <button class="tab active" onclick="reports.switchTab('saved')">Saved Reports</button>
-      <button class="tab" onclick="reports.switchTab('create')">Create New</button>
+      <button class="tab active" data-tab="saved" onclick="reports.switchTab('saved', event.target)">Saved Reports</button>
+      <button class="tab" data-tab="create" onclick="reports.switchTab('create', event.target)">Create New</button>
     </div>
 
     <!-- Saved Reports Content -->
