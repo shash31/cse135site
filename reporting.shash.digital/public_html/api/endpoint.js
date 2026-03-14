@@ -10,7 +10,7 @@ const cors = require("cors");
 const session = require("express-session");
 const MySQLStore = require("express-mysql-session")(session);
 const bcrypt = require("bcrypt");
-const puppeteer = require("puppeteer");
+const wkhtmltopdf = require("wkhtmltopdf");
 const UAParser = require("ua-parser-js");
 
 const app = express();
@@ -833,83 +833,62 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
   if (!report) return jsonError(res, 404, "Report not found");
   if (!canAccessReport(req, report)) return jsonError(res, 403, "Forbidden");
 
-  const token = createExportToken(reportId, req.user.id);
-  const exportUrl = `${APP_BASE_URL}/report-view.html?reportId=${reportId}&exportToken=${token}`;
-  const fileName = `report-${reportId}-${Date.now()}.pdf`;
-  const filePath = path.join(exportsDir, fileName);
-
-  let browser;
   try {
     console.log(`[PDF Export] Starting export for report ${reportId}`);
+    
+    // Create export token for authentication
+    const token = createExportToken(reportId, req.user.id);
+    const exportUrl = `${APP_BASE_URL}/report-view.html?reportId=${reportId}&exportToken=${token}`;
+    
     console.log(`[PDF Export] Target URL: ${exportUrl}`);
+    
+    const fileName = `report-${reportId}-${Date.now()}.pdf`;
+    const filePath = path.join(exportsDir, fileName);
 
-    browser = await puppeteer.launch({
-      executablePath: '/usr/bin/chromium-browser',
-      headless: true,
-      env: {
-        ...process.env,
-        LD_PRELOAD: ''
-      },
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-gpu',
-        '--proxy-server="direct://"', 
-        '--proxy-bypass-list=*',
-        '--no-zygote',
-        '--disable-dev-shm-usage',
-        '--single-process',
-        '--disable-extensions'
-      ]
+    // Use wkhtmltopdf to render the page
+    console.log(`[PDF Export] Generating PDF with wkhtmltopdf`);
+    
+    wkhtmltopdf(exportUrl, {
+      pageSize: 'A4',
+      marginTop: 20,
+      marginBottom: 20,
+      marginLeft: 20,
+      marginRight: 20,
+      printMediaType: true,
+      enableLocalFileAccess: true,
+    }, (err, stream) => {
+      if (err) {
+        console.error(`[PDF Export] Error generating PDF:`, err);
+        return jsonError(res, 500, `Export failed: ${err.message}`);
+      }
+
+      const writeStream = fs.createWriteStream(filePath);
+      stream.pipe(writeStream)
+        .on('error', (err) => {
+          console.error(`[PDF Export] Error writing file:`, err);
+          return jsonError(res, 500, `Failed to write PDF file`);
+        })
+        .on('finish', async () => {
+          try {
+            console.log(`[PDF Export] PDF generated successfully at ${filePath}`);
+            
+            const publicPath = `/exports/${fileName}`;
+            await pool.query(
+              "INSERT INTO report_exports (report_id, file_path, created_by, status) VALUES (?, ?, ?, ?)",
+              [reportId, publicPath, req.user.id, "ready"]
+            );
+
+            res.json({ url: `${APP_BASE_URL}${publicPath}` });
+          } catch (err) {
+            console.error(`[PDF Export] Database error:`, err);
+            jsonError(res, 500, "Failed to save export record");
+          }
+        });
     });
-    
-    console.log(`[PDF Export] Browser launched successfully`);
-    
-    const page = await browser.newPage();
-    console.log(`[PDF Export] New page created`);
-    
-    await page.goto(exportUrl, { 
-      waitUntil: "load", 
-      timeout: 30000 
-    }).catch(err => {
-      console.warn(`[PDF Export] Page load warning: ${err.message}`);
-    });
-    
-    console.log(`[PDF Export] Page loaded, waiting for report to render...`);
-    
-    // Wait for the report to be fully rendered
-    await page.waitForSelector('[data-report-ready="true"]', { timeout: 30000 })
-      .catch(err => {
-        console.warn(`[PDF Export] Report ready marker not found: ${err.message}`);
-      });
-    
-    console.log(`[PDF Export] Report ready, generating PDF`);
-    
-    await page.pdf({ 
-      path: filePath, 
-      format: "A4", 
-      printBackground: true,
-      margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' }
-    });
-    
-    console.log(`[PDF Export] PDF generated successfully at ${filePath}`);
   } catch (error) {
     console.error(`[PDF Export] Error for report ${reportId}:`, error);
     return jsonError(res, 500, `Export failed: ${error.message}`);
-  } finally {
-    if (browser) {
-      await browser.close();
-      console.log(`[PDF Export] Browser closed`);
-    }
   }
-
-  const publicPath = `/exports/${fileName}`;
-  await pool.query(
-    "INSERT INTO report_exports (report_id, file_path, created_by, status) VALUES (?, ?, ?, ?)",
-    [reportId, publicPath, req.user.id, "ready"]
-  );
-
-  res.json({ url: `${APP_BASE_URL}${publicPath}` });
 });
 
 const staticRouter = express.Router();
