@@ -827,6 +827,125 @@ api.get("/reports/:id/data", async (req, res) => {
   });
 });
 
+function generateBarChartSVG(chartData, unit = '') {
+  const { labels, values } = chartData;
+  if (!labels || !values || labels.length === 0) return '';
+  
+  const width = 600;
+  const height = 300;
+  const padding = { top: 20, right: 20, bottom: 50, left: 50 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  
+  const maxValue = Math.max(...values, 1);
+  const barWidth = chartWidth / values.length;
+  const barPadding = barWidth * 0.1;
+  
+  let svg = `<div class="chart-section"><svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+  
+  // Axes
+  svg += `<line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#d1d5db" stroke-width="2"/>`;
+  svg += `<line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#d1d5db" stroke-width="2"/>`;
+  
+  // Y-axis labels
+  for (let i = 0; i <= 5; i++) {
+    const value = Math.round((maxValue / 5) * i);
+    const y = height - padding.bottom - (chartHeight / 5) * i;
+    svg += `<text x="${padding.left - 5}" y="${y + 4}" text-anchor="end" font-size="12" fill="#6b7280">${value}</text>`;
+  }
+  
+  // Bars and X-axis labels
+  const colors = ['#667eea', '#764ba2', '#f97316', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6'];
+  values.forEach((value, i) => {
+    const x = padding.left + (i * barWidth) + barPadding / 2;
+    const barHeight = (value / maxValue) * chartHeight;
+    const y = height - padding.bottom - barHeight;
+    
+    // Bar
+    svg += `<rect x="${x}" y="${y}" width="${barWidth - barPadding}" height="${barHeight}" fill="${colors[i % colors.length]}" rx="2"/>`;
+    
+    // X-axis label
+    const label = String(labels[i]).length > 8 ? String(labels[i]).substring(0, 6) + '..' : labels[i];
+    svg += `<text x="${x + (barWidth - barPadding) / 2}" y="${height - padding.bottom + 20}" text-anchor="middle" font-size="11" fill="#6b7280">${label}</text>`;
+  });
+  
+  svg += `</svg></div>`;
+  
+  // Legend
+  let legend = '<div class="chart-legend">';
+  values.forEach((value, i) => {
+    legend += `<div class="legend-item"><span class="legend-color" style="background-color: ${colors[i % colors.length]}"></span> ${labels[i]}: ${value}${unit}</div>`;
+  });
+  legend += '</div>';
+  
+  return svg + legend;
+}
+
+function generateDoughnutChartSVG(chartData) {
+  const { labels, values } = chartData;
+  if (!labels || !values || labels.length === 0) return '';
+  
+  const width = 400;
+  const height = 300;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = 70;
+  const innerRadius = 45;
+  
+  const total = values.reduce((a, b) => a + b, 0);
+  const colors = ['#667eea', '#f97316'];
+  
+  let svg = `<div class="chart-section"><svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+  
+  let cumulativeAngle = 0;
+  values.forEach((value, i) => {
+    const sliceAngle = (value / total) * 360;
+    const startAngle = cumulativeAngle;
+    const endAngle = cumulativeAngle + sliceAngle;
+    
+    const startRad1 = (startAngle * Math.PI) / 180;
+    const endRad1 = (endAngle * Math.PI) / 180;
+    
+    const x1 = centerX + radius * Math.cos(startRad1);
+    const y1 = centerY + radius * Math.sin(startRad1);
+    const x2 = centerX + radius * Math.cos(endRad1);
+    const y2 = centerY + radius * Math.sin(endRad1);
+    
+    const x3 = centerX + innerRadius * Math.cos(endRad1);
+    const y3 = centerY + innerRadius * Math.sin(endRad1);
+    const x4 = centerX + innerRadius * Math.cos(startRad1);
+    const y4 = centerY + innerRadius * Math.sin(startRad1);
+    
+    const largeArc = sliceAngle > 180 ? 1 : 0;
+    
+    const pathData = `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z`;
+    svg += `<path d="${pathData}" fill="${colors[i]}" stroke="white" stroke-width="2"/>`;
+    
+    // Label position
+    const labelAngle = (startAngle + sliceAngle / 2) * Math.PI / 180;
+    const labelRadius = (radius + innerRadius) / 2;
+    const labelX = centerX + labelRadius * Math.cos(labelAngle);
+    const labelY = centerY + labelRadius * Math.sin(labelAngle);
+    const percentage = Math.round((value / total) * 100);
+    
+    svg += `<text x="${labelX}" y="${labelY}" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="bold" fill="white">${percentage}%</text>`;
+    
+    cumulativeAngle += sliceAngle;
+  });
+  
+  svg += `</svg></div>`;
+  
+  // Legend
+  let legend = '<div class="chart-legend">';
+  values.forEach((value, i) => {
+    const percentage = Math.round((value / total) * 100);
+    legend += `<div class="legend-item"><span class="legend-color" style="background-color: ${colors[i]}"></span> ${labels[i]}: ${value}ms (${percentage}%)</div>`;
+  });
+  legend += '</div>';
+  
+  return svg + legend;
+}
+
 api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst"), async (req, res) => {
   const reportId = Number(req.params.id);
   const report = await getReportById(reportId);
@@ -861,7 +980,6 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
     const filePath = path.join(exportsDir, fileName);
 
     console.log(`[PDF Export] Generating PDF with wkhtmltopdf`);
-    console.log(html)
     
     wkhtmltopdf(html, {
       pageSize: 'A4',
@@ -924,6 +1042,10 @@ function buildReportHTML(report, metrics, comments) {
     .stat-box { flex: 1; min-width: 150px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; text-align: center; }
     .stat-label { color: #6b7280; font-size: 0.9rem; margin-bottom: 8px; }
     .stat-value { font-size: 1.5rem; font-weight: bold; color: #111827; }
+    .chart-section { margin: 32px 0; padding: 20px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .chart-legend { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+    .legend-item { display: inline-block; margin-right: 24px; margin-top: 8px; font-size: 0.9rem; }
+    .legend-color { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
     table { width: 100%; border-collapse: collapse; margin: 20px 0; }
     table th { background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; text-align: left; font-weight: 600; }
     table td { border: 1px solid #e5e7eb; padding: 10px 12px; }
@@ -971,6 +1093,20 @@ function buildReportHTML(report, metrics, comments) {
       `;
     }
     html += '</div>';
+  }
+
+  // Charts
+  if (charts) {
+    if (report.section_name === 'performance' && charts.loadTimeBySession) {
+      html += `<h3>Load Time by Session</h3>`;
+      html += generateBarChartSVG(charts.loadTimeBySession, 'ms');
+    } else if (report.section_name === 'engagement' && charts.idleVsActive) {
+      html += `<h3>Idle vs Active Time</h3>`;
+      html += generateDoughnutChartSVG(charts.idleVsActive);
+    } else if (report.section_name === 'tech' && charts.browserShare) {
+      html += `<h3>Browser Distribution</h3>`;
+      html += generateBarChartSVG(charts.browserShare, '%');
+    }
   }
 
   // Table data

@@ -417,13 +417,12 @@
 
       content.innerHTML = html;
 
-      // Initialize charts if present
       if (charts && Object.keys(charts).length > 0) {
         initializeReportChart(report.section, charts);
       }
 
-      // Mark as ready for PDF export
-      content.setAttribute('data-report-ready', 'true');
+      // // Mark as ready for PDF export
+      // content.setAttribute('data-report-ready', 'true');
     }
 
     function initializeReportChart(section, charts) {
