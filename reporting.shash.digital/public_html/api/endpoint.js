@@ -845,7 +845,6 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
     const fileName = `report-${reportId}-${Date.now()}.pdf`;
     const filePath = path.join(exportsDir, fileName);
 
-    // Use wkhtmltopdf to render the page
     console.log(`[PDF Export] Generating PDF with wkhtmltopdf`);
     
     wkhtmltopdf(exportUrl, {
@@ -856,6 +855,7 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
       marginRight: 20,
       printMediaType: true,
       enableLocalFileAccess: true,
+      javascriptDelay: 5000,  // Wait 5 seconds for the report to laod
     }, (err, stream) => {
       if (err) {
         console.error(`[PDF Export] Error generating PDF:`, err);
