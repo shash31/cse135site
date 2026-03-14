@@ -836,26 +836,39 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
   try {
     console.log(`[PDF Export] Starting export for report ${reportId}`);
     
-    // Create export token for authentication
-    const token = createExportToken(reportId, req.user.id);
-    const exportUrl = `${APP_BASE_URL}/report-view.html?reportId=${reportId}&exportToken=${token}`;
-    
-    console.log(`[PDF Export] Target URL: ${exportUrl}`);
-    
+    const filters = safeJsonParse(report.filters_json);
+    const normalizedFilters = buildFilters(filters || {});
+    const rows = await fetchLogs(normalizedFilters);
+
+    let metrics = null;
+    if (report.section_name === "performance") {
+      metrics = computePerformanceMetrics(rows);
+    } else if (report.section_name === "engagement") {
+      metrics = computeEngagementMetrics(rows);
+    } else if (report.section_name === "tech") {
+      metrics = computeTechMetrics(rows);
+    }
+
+    const [comments] = await pool.query(
+      "SELECT c.id, c.comment_text, c.created_at, u.username AS author FROM report_comments c LEFT JOIN users u ON c.author_id = u.id WHERE c.report_id = ? ORDER BY c.created_at DESC",
+      [reportId]
+    );
+
+    // Generate HTML with data pre-loaded
+    const html = buildReportHTML(report, metrics, comments);
+
     const fileName = `report-${reportId}-${Date.now()}.pdf`;
     const filePath = path.join(exportsDir, fileName);
 
     console.log(`[PDF Export] Generating PDF with wkhtmltopdf`);
+    console.log(html)
     
-    wkhtmltopdf(exportUrl, {
+    wkhtmltopdf(html, {
       pageSize: 'A4',
       marginTop: 20,
       marginBottom: 20,
       marginLeft: 20,
       marginRight: 20,
-      printMediaType: true,
-      enableLocalFileAccess: true,
-      javascriptDelay: 5000,  // Wait 5 seconds for the report to laod
     }, (err, stream) => {
       if (err) {
         console.error(`[PDF Export] Error generating PDF:`, err);
@@ -890,6 +903,123 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
     return jsonError(res, 500, `Export failed: ${error.message}`);
   }
 });
+
+function buildReportHTML(report, metrics, comments) {
+  const { summary, charts, table } = metrics || {};
+
+  let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #1f2937; background: white; padding: 40px; line-height: 1.6; }
+    h1 { font-size: 2rem; margin-bottom: 6px; color: #111827; }
+    h3 { font-size: 1.25rem; margin: 24px 0 12px 0; color: #1f2937; }
+    .report-header { margin-bottom: 32px; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb; }
+    .report-meta { color: #6b7280; font-size: 0.95rem; }
+    .report-meta-item { margin: 4px 0; }
+    .section-label { display: inline-block; background: #ede9fe; color: #6d28d9; padding: 6px 12px; border-radius: 4px; font-size: 0.9rem; margin: 12px 0; }
+    .summary { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; }
+    .stat-box { flex: 1; min-width: 150px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; text-align: center; }
+    .stat-label { color: #6b7280; font-size: 0.9rem; margin-bottom: 8px; }
+    .stat-value { font-size: 1.5rem; font-weight: bold; color: #111827; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    table th { background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; text-align: left; font-weight: 600; }
+    table td { border: 1px solid #e5e7eb; padding: 10px 12px; }
+    table tr:nth-child(even) { background: #f9fafb; }
+    .comments-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+    .comment { background: #f9fafb; border-left: 3px solid #667eea; padding: 12px; margin: 12px 0; border-radius: 2px; }
+    .comment-author { font-weight: 600; }
+    .comment-date { color: #9ca3af; font-size: 0.9rem; margin-left: 8px; }
+    .comment-text { margin-top: 8px; }
+    .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 0.9rem; color: #9ca3af; }
+  </style>
+</head>
+<body>
+  <div class="report-header">
+    <h1>${report.name}</h1>
+    <div class="section-label">${report.section_name}</div>
+    <div class="report-meta">
+      <div class="report-meta-item"><strong>Report ID:</strong> ${report.id}</div>
+      <div class="report-meta-item"><strong>Created:</strong> ${new Date(report.created_at).toLocaleString()}</div>
+      <div class="report-meta-item"><strong>Created By:</strong> ${report.created_by_name || 'System'}</div>
+      <div class="report-meta-item"><strong>Generated:</strong> ${new Date().toLocaleString()}</div>
+    </div>
+  </div>`;
+
+  // Summary stats
+  if (summary) {
+    html += '<div class="summary">';
+    if (report.section_name === 'performance') {
+      html += `
+        <div class="stat-box"><div class="stat-label">Sessions</div><div class="stat-value">${summary.sessions}</div></div>
+        <div class="stat-box"><div class="stat-label">Avg Load Time</div><div class="stat-value">${summary.averageLoadMs}ms</div></div>
+        <div class="stat-box"><div class="stat-label">P95 Load Time</div><div class="stat-value">${summary.p95LoadMs}ms</div></div>
+      `;
+    } else if (report.section_name === 'engagement') {
+      html += `
+        <div class="stat-box"><div class="stat-label">Sessions</div><div class="stat-value">${summary.sessions}</div></div>
+        <div class="stat-box"><div class="stat-label">Total Idle</div><div class="stat-value">${summary.totalIdleMs}ms</div></div>
+        <div class="stat-box"><div class="stat-label">Total Active</div><div class="stat-value">${summary.totalActiveMs}ms</div></div>
+      `;
+    } else {
+      html += `
+        <div class="stat-box"><div class="stat-label">Sessions</div><div class="stat-value">${summary.sessions}</div></div>
+        <div class="stat-box"><div class="stat-label">Unique Browsers</div><div class="stat-value">${summary.uniqueBrowsers}</div></div>
+        <div class="stat-box"><div class="stat-label">Unique OS</div><div class="stat-value">${summary.uniqueOs}</div></div>
+      `;
+    }
+    html += '</div>';
+  }
+
+  // Table data
+  if (table && table.length > 0) {
+    html += '<h3>Detailed Data</h3><table>';
+    if (report.section_name === 'performance') {
+      html += '<thead><tr><th>Session ID</th><th>Page</th><th>Load Time (ms)</th><th>Start Load</th><th>End Load</th><th>Date</th></tr></thead><tbody>';
+      table.forEach(row => {
+        html += `<tr><td>${row.sessionID.slice(0, 8)}</td><td>${row.page}</td><td>${row.loadTime}</td><td>${row.startLoad}</td><td>${row.endLoad}</td><td>${new Date(row.createdAt).toLocaleDateString()}</td></tr>`;
+      });
+    } else if (report.section_name === 'engagement') {
+      html += '<thead><tr><th>Session ID</th><th>Page</th><th>Idle (ms)</th><th>Active (ms)</th><th>Date</th></tr></thead><tbody>';
+      table.forEach(row => {
+        html += `<tr><td>${row.sessionID.slice(0, 8)}</td><td>${row.page}</td><td>${row.idleTotal}</td><td>${row.activeTotal}</td><td>${new Date(row.createdAt).toLocaleDateString()}</td></tr>`;
+      });
+    } else {
+      html += '<thead><tr><th>Session ID</th><th>Page</th><th>Browser</th><th>OS</th><th>Device</th><th>Viewport</th></tr></thead><tbody>';
+      table.forEach(row => {
+        html += `<tr><td>${row.sessionID.slice(0, 8)}</td><td>${row.page}</td><td>${row.browser}</td><td>${row.os}</td><td>${row.device}</td><td>${row.viewport}</td></tr>`;
+      });
+    }
+    html += '</tbody></table>';
+  }
+
+  // Comments
+  if (comments && comments.length > 0) {
+    html += '<div class="comments-section"><h3>Analyst Comments</h3>';
+    comments.forEach(comment => {
+      html += `
+        <div class="comment">
+          <div><span class="comment-author">${comment.author || 'Unknown'}</span>
+          <span class="comment-date">${new Date(comment.created_at).toLocaleDateString()}</span></div>
+          <div class="comment-text">${comment.comment_text}</div>
+        </div>
+      `;
+    });
+    html += '</div>';
+  }
+
+  html += `
+    <div class="footer">
+      <p>Report generated on ${new Date().toLocaleString()}</p>
+      <p>reporting.shash.digital</p>
+    </div>
+  </body>
+</html>`;
+
+  return html;
+}
 
 const staticRouter = express.Router();
 
