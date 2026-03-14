@@ -833,7 +833,7 @@ function generateBarChartSVG(chartData, unit = '') {
   
   const width = 600;
   const height = 300;
-  const padding = { top: 20, right: 20, bottom: 50, left: 50 };
+  const padding = { top: 20, right: 20, bottom: 30, left: 50 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
   
@@ -854,7 +854,7 @@ function generateBarChartSVG(chartData, unit = '') {
     svg += `<text x="${padding.left - 5}" y="${y + 4}" text-anchor="end" font-size="12" fill="#6b7280">${value}</text>`;
   }
   
-  // Bars and X-axis labels
+  // Bars (no X-axis labels)
   const colors = ['#667eea', '#764ba2', '#f97316', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6'];
   values.forEach((value, i) => {
     const x = padding.left + (i * barWidth) + barPadding / 2;
@@ -863,10 +863,6 @@ function generateBarChartSVG(chartData, unit = '') {
     
     // Bar
     svg += `<rect x="${x}" y="${y}" width="${barWidth - barPadding}" height="${barHeight}" fill="${colors[i % colors.length]}" rx="2"/>`;
-    
-    // X-axis label
-    const label = String(labels[i]).length > 8 ? String(labels[i]).substring(0, 6) + '..' : labels[i];
-    svg += `<text x="${x + (barWidth - barPadding) / 2}" y="${height - padding.bottom + 20}" text-anchor="middle" font-size="11" fill="#6b7280">${label}</text>`;
   });
   
   svg += `</svg></div>`;
@@ -885,17 +881,17 @@ function generateDoughnutChartSVG(chartData) {
   const { labels, values } = chartData;
   if (!labels || !values || labels.length === 0) return '';
   
-  const width = 400;
-  const height = 300;
+  const width = 500;
+  const height = 350;
   const centerX = width / 2;
   const centerY = height / 2;
-  const radius = 70;
-  const innerRadius = 45;
+  const radius = 100;
+  const innerRadius = 60;
   
   const total = values.reduce((a, b) => a + b, 0);
   const colors = ['#667eea', '#f97316'];
   
-  let svg = `<div class="chart-section"><svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+  let svg = `<div class="chart-section" style="text-align: center;"><svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="margin: 0 auto; display: block;">`;
   
   let cumulativeAngle = 0;
   values.forEach((value, i) => {
@@ -919,16 +915,7 @@ function generateDoughnutChartSVG(chartData) {
     const largeArc = sliceAngle > 180 ? 1 : 0;
     
     const pathData = `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z`;
-    svg += `<path d="${pathData}" fill="${colors[i]}" stroke="white" stroke-width="2"/>`;
-    
-    // Label position
-    const labelAngle = (startAngle + sliceAngle / 2) * Math.PI / 180;
-    const labelRadius = (radius + innerRadius) / 2;
-    const labelX = centerX + labelRadius * Math.cos(labelAngle);
-    const labelY = centerY + labelRadius * Math.sin(labelAngle);
-    const percentage = Math.round((value / total) * 100);
-    
-    svg += `<text x="${labelX}" y="${labelY}" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="bold" fill="white">${percentage}%</text>`;
+    svg += `<path d="${pathData}" fill="${colors[i]}" stroke="white" stroke-width="4"/>`;
     
     cumulativeAngle += sliceAngle;
   });
@@ -980,6 +967,7 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
     const filePath = path.join(exportsDir, fileName);
 
     console.log(`[PDF Export] Generating PDF with wkhtmltopdf`);
+    console.log(html)
     
     wkhtmltopdf(html, {
       pageSize: 'A4',
