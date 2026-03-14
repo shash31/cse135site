@@ -28,4 +28,4 @@ jobs:
         run: |
           git remote remove prod 2>/dev/null || true
           git remote add prod "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/var/repo/cse135site.git"
-          git push prod HEAD:main
+          git push prod HEAD:main --force
