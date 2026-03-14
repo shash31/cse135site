@@ -856,8 +856,10 @@ api.post("/reports/:id/export", requireAuth, requireRole("super_admin", "analyst
         '--disable-gpu',
         '--proxy-server="direct://"', 
         '--proxy-bypass-list=*',
+        '--no-zygote',
         '--disable-dev-shm-usage',
-        '--single-process'
+        '--single-process',
+        '--disable-extensions'
       ]
     });
     
