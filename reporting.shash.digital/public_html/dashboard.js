@@ -26,9 +26,6 @@ const dashboard = {
     userInfo.textContent = `${app.user.username} (${roleLabel[app.user.role]})`;
   },
 
-  /**
-   * Setup navigation links based on role
-   */
   setupNavigation() {
     const navLinks = document.getElementById('navLinks');
     navLinks.innerHTML = '';
@@ -50,9 +47,6 @@ const dashboard = {
     }
   },
 
-  /**
-   * Setup section tabs based on user's access
-   */
   async setupSections() {
     const sections = await app.getSections();
     const userSections = app.user.sections || [];
